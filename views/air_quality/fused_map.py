@@ -68,9 +68,9 @@ def render_fused_map_view():
     if "layer_option" not in st.session_state:
         st.session_state["layer_option"] = "Fused 1 km Grid (Crisp)"
     if "map_opacity" not in st.session_state:
-        st.session_state["map_opacity"] = 75
+        st.session_state["map_opacity"] = 65
     if "basemap_theme" not in st.session_state:
-        st.session_state["basemap_theme"] = "Positron (Light Retina)"
+        st.session_state["basemap_theme"] = "OpenStreetMap (Real Streets)"
     if "show_stations" not in st.session_state:
         st.session_state["show_stations"] = True
     if "show_anomalies" not in st.session_state:
@@ -136,11 +136,11 @@ def render_fused_map_view():
         
         # Basemap Dropdown
         basemap_options = [
-            "Positron (Light Retina)",
-            "Dark Matter (Neon)",
+            "OpenStreetMap (Real Streets)",
+            "Esri World Street Map",
             "Satellite + Roads (Hybrid)",
             "Topographic",
-            "OpenStreetMap"
+            "Dark Matter"
         ]
         curr_base = st.session_state["basemap_theme"] if st.session_state["basemap_theme"] in basemap_options else basemap_options[0]
         basemap = st.selectbox(
@@ -233,10 +233,13 @@ def render_fused_map_view():
         active_layer_code = layer_key_map.get(st.session_state["layer_option"], "fused")
         
         basemap_code_map = {
+            "OpenStreetMap (Real Streets)": "streets",
+            "Esri World Street Map": "positron",
             "Positron (Light Retina)": "positron",
-            "Dark Matter (Neon)": "dark_matter",
             "Satellite + Roads (Hybrid)": "satellite_hybrid",
             "Topographic": "topographic",
+            "Dark Matter": "dark_matter",
+            "Dark Matter (Neon)": "dark_matter",
             "OpenStreetMap": "streets"
         }
         active_basemap_code = basemap_code_map.get(st.session_state["basemap_theme"], "positron")

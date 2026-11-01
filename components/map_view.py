@@ -24,8 +24,8 @@ def render_leaflet_fused_map(
     active_layer: str = "fused",         # "original", "fused", "smooth", "aod", "gap_filled", "wind", "heat"
     show_stations: bool = True,
     show_anomalies: bool = True,
-    opacity: float = 0.75,
-    basemap_theme: str = "positron",     # "positron", "dark_matter", "satellite_hybrid", "topographic", "streets"
+    opacity: float = 0.65,
+    basemap_theme: str = "streets",     # "streets", "positron", "dark_matter", "satellite_hybrid", "topographic"
     selected_station_name: Optional[str] = "Anand Vihar",
     height: int = 560,
     is_overview: bool = False,
@@ -496,46 +496,38 @@ def render_leaflet_fused_map(
                 document.getElementById('zoom-label').innerText = 'Delhi · Zoom ' + map.getZoom();
             }});
 
-            // High-Resolution & Retina Basemap Providers
+            // High-Resolution & 100% Free Basemap Providers (Zero API Keys Required)
             var basemaps = {{
-                "positron": L.tileLayer('https://{{s}}.basemaps.cartocdn.com/light_all/{{z}}/{{x}}/{{y}}{{r}}.png', {{
-                    maxZoom: 20,
-                    subdomains: 'abcd',
-                    detectRetina: true,
-                    attribution: '&copy; CARTO'
+                "streets": L.tileLayer('https://tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
+                    maxZoom: 19,
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 }}),
-                "dark_matter": L.tileLayer('https://{{s}}.basemaps.cartocdn.com/dark_all/{{z}}/{{x}}/{{y}}{{r}}.png', {{
-                    maxZoom: 20,
-                    subdomains: 'abcd',
-                    detectRetina: true,
-                    attribution: '&copy; CARTO'
+                "positron": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{{z}}/{{y}}/{{x}}', {{
+                    maxZoom: 19,
+                    attribution: 'Esri World Street Map'
+                }}),
+                "dark_matter": L.tileLayer('https://tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
+                    maxZoom: 19,
+                    attribution: '&copy; OpenStreetMap'
                 }}),
                 "satellite_hybrid": L.layerGroup([
                     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{{z}}/{{y}}/{{x}}', {{
                         maxZoom: 19,
-                        detectRetina: true,
                         attribution: 'Esri Satellite'
                     }}),
                     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{{z}}/{{y}}/{{x}}', {{
                         maxZoom: 19,
-                        detectRetina: true,
                         attribution: 'Esri Reference'
                     }})
                 ]),
                 "topographic": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{{z}}/{{y}}/{{x}}', {{
                     maxZoom: 18,
-                    detectRetina: true,
                     attribution: 'Esri Topo'
-                }}),
-                "streets": L.tileLayer('https://tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
-                    maxZoom: 19,
-                    detectRetina: true,
-                    attribution: 'OSM'
                 }})
             }};
 
             var requestedTheme = "{theme_key}";
-            var activeBasemapLayer = basemaps[requestedTheme] || basemaps["positron"];
+            var activeBasemapLayer = basemaps[requestedTheme] || basemaps["streets"];
             activeBasemapLayer.addTo(map);
 
             var gridData = {grid_json};
@@ -821,7 +813,7 @@ def render_combined_hotspot_map(
                 attributionControl: false
             }});
             
-            L.tileLayer('https://{{s}}.basemaps.cartocdn.com/light_all/{{z}}/{{x}}/{{y}}{{r}}.png', {{
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{{z}}/{{y}}/{{x}}', {{
                 maxZoom: 20,
                 subdomains: 'abcd',
                 detectRetina: true,
