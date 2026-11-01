@@ -690,6 +690,10 @@
                 <div class="card-header-title">Map Layers</div>
                 <div class="radio-group">
                     <label class="radio-option">
+                        <input type="radio" name="layer_opt" value="original" onchange="onLayerChange(this.value)">
+                        <span>Original Clean Map (No Grid)</span>
+                    </label>
+                    <label class="radio-option">
                         <input type="radio" name="layer_opt" value="fused" checked onchange="onLayerChange(this.value)">
                         <span>Fused 1 km Grid (Crisp)</span>
                     </label>
@@ -879,7 +883,10 @@
 
         function onLayerChange(val) {
             currentMode = val;
-            if (val === 'smooth') {
+            if (val === 'original') {
+                gridLayer.clearLayers();
+                if (heatLayer && map.hasLayer(heatLayer)) map.removeLayer(heatLayer);
+            } else if (val === 'smooth') {
                 gridLayer.clearLayers();
                 if (heatLayer) heatLayer.addTo(map);
             } else {

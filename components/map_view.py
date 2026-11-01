@@ -1,9 +1,8 @@
 """
 Interactive Leaflet-based Geospatial Map Component for EcoPulse.
 High-resolution 1 km PM2.5 gridded surface with Retina basemaps,
-smooth contour heat surface, animated wind flow streamlines, floating inspection HUD,
-numeric station pins with dual radar pulses, quick landmark fly-to controls,
-and facility emission hotspot overlays.
+smooth contour heat surface, animated wind flow vectors, floating inspection HUD,
+numeric station pins, pulsing radar hotspots, and quick landmark camera fly-to controls.
 """
 import json
 from typing import List, Dict, Any, Optional
@@ -22,24 +21,23 @@ def _safe_json_dumps(obj: Any) -> str:
 
 def render_leaflet_fused_map(
     grid_cells: List[Dict[str, Any]],
-    active_layer: str = "fused",         # "fused", "smooth", "aod", "gap_filled", "wind", "heat"
+    active_layer: str = "fused",         # "original", "fused", "smooth", "aod", "gap_filled", "wind", "heat"
     show_stations: bool = True,
     show_anomalies: bool = True,
     opacity: float = 0.75,
     basemap_theme: str = "positron",     # "positron", "dark_matter", "satellite_hybrid", "topographic", "streets"
-    selected_station_name: Optional[str] = None,
+    selected_station_name: Optional[str] = "Anand Vihar",
     height: int = 560,
     is_overview: bool = False,
     stations: Optional[List[Dict[str, Any]]] = None,
     wind_data: Optional[Dict[str, Any]] = None,
     show_wind: bool = False,
     fire_hotspots: Optional[List[Dict[str, Any]]] = None,
-    show_fires: bool = True
+    show_fires: bool = False
 ):
     """
-    Renders ultra-high quality Leaflet map with Retina basemaps, discrete 1km / smooth heat modes,
-    live animated wind flow streamlines, collapsible glassmorphic HUD,
-    quick landmark navigation, and CPCB station pins with pulsing radar rings.
+    Renders ultra-high quality Leaflet map with Retina basemaps, dual discrete/smooth modes,
+    live wind flow streamlines, floating inspection HUD, and numeric station badges.
     """
     grid_json = _safe_json_dumps(grid_cells)
     active_stations = stations if (stations and len(stations) > 0) else STATIONS
@@ -66,7 +64,9 @@ def render_leaflet_fused_map(
     
     # Normalize layer key
     layer_key = (active_layer or "fused").lower()
-    if "smooth" in layer_key or "contour" in layer_key or "heat" in layer_key:
+    if "original" in layer_key or "clean" in layer_key or "base" in layer_key:
+        layer_mode = "original"
+    elif "smooth" in layer_key or "contour" in layer_key:
         layer_mode = "smooth"
     elif "aod" in layer_key:
         layer_mode = "aod"
@@ -76,8 +76,6 @@ def render_leaflet_fused_map(
         layer_mode = "wind"
     else:
         layer_mode = "fused"
-
-    sel_station_str = selected_station_name if selected_station_name else ""
 
     html_code = f"""
     <!DOCTYPE html>
@@ -90,295 +88,210 @@ def render_leaflet_fused_map(
         <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
         <style>
             * {{ box-sizing: border-box; }}
-            html, body {{ margin: 0; padding: 0; width: 100%; height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #0b1120; overflow: hidden; }}
-            
-            #map-wrapper {{
-                position: relative;
-                width: 100%;
-                height: {height}px;
-                border-radius: 12px;
-                overflow: hidden;
-                box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.20), 0 8px 10px -6px rgba(15, 23, 42, 0.10);
-                border: 1px solid #cbd5e1;
-            }}
-            #map {{ width: 100%; height: 100%; background: #0f172a; }}
+            body {{ margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #0f172a; overflow: hidden; }}
+            #map-container {{ position: relative; width: 100%; height: {height}px; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.1); border: 1px solid #cbd5e1; }}
+            #map {{ width: 100%; height: 100%; }}
             
             /* Glassmorphic Floating HUD (Inspection Card) */
             .map-hud {{
                 position: absolute;
-                top: 12px;
-                left: 12px;
+                top: 14px;
+                left: 14px;
                 z-index: 1000;
-                background: rgba(15, 23, 42, 0.90);
-                backdrop-filter: blur(14px);
-                -webkit-backdrop-filter: blur(14px);
-                border: 1px solid rgba(255, 255, 255, 0.16);
+                background: rgba(15, 23, 42, 0.88);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                border: 1px solid rgba(255, 255, 255, 0.18);
                 border-radius: 10px;
-                padding: {'8px 12px' if is_overview else '10px 14px'};
+                padding: 10px 14px;
                 color: #ffffff;
-                min-width: {'210px' if is_overview else '260px'};
-                max-width: 300px;
-                box-shadow: 0 16px 36px rgba(0,0,0,0.35);
-                transition: transform 0.25s ease, opacity 0.2s ease;
-                pointer-events: auto;
-            }}
-            .map-hud.collapsed .hud-body {{
-                display: none;
+                min-width: 260px;
+                box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+                transition: all 0.2s ease;
+                pointer-events: none;
             }}
             .hud-header {{
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
                 border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-                padding-bottom: 5px;
-                margin-bottom: 5px;
+                padding-bottom: 6px;
+                margin-bottom: 6px;
             }}
             .hud-title-box {{
                 display: flex;
                 align-items: center;
-                gap: 7px;
+                gap: 6px;
             }}
             .hud-live-dot {{
                 width: 8px;
                 height: 8px;
                 border-radius: 50%;
                 background: #10b981;
-                box-shadow: 0 0 10px #10b981;
+                box-shadow: 0 0 8px #10b981;
                 animation: pulse-dot 2s infinite;
             }}
             @keyframes pulse-dot {{
                 0% {{ opacity: 1; transform: scale(1); }}
-                50% {{ opacity: 0.35; transform: scale(0.85); }}
+                50% {{ opacity: 0.4; transform: scale(0.85); }}
                 100% {{ opacity: 1; transform: scale(1); }}
             }}
             .hud-title {{
-                font-size: {'11.5px' if is_overview else '12.5px'};
+                font-size: 12px;
                 font-weight: 700;
-                letter-spacing: 0.2px;
+                letter-spacing: 0.3px;
                 color: #f8fafc;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                max-width: 170px;
-            }}
-            .hud-actions {{
-                display: flex;
-                align-items: center;
-                gap: 5px;
-            }}
-            .hud-btn-toggle {{
-                background: transparent;
-                border: none;
-                color: #94a3b8;
-                font-size: 13px;
-                font-weight: 700;
-                cursor: pointer;
-                padding: 0 4px;
-                line-height: 1;
-                border-radius: 4px;
-            }}
-            .hud-btn-toggle:hover {{
-                color: #ffffff;
-                background: rgba(255, 255, 255, 0.1);
             }}
             .hud-coords {{
-                font-size: 9.5px;
+                font-size: 10.5px;
                 color: #94a3b8;
-                font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+                font-family: monospace;
             }}
             .hud-grid {{
                 display: grid;
                 grid-template-columns: 1fr 1fr;
-                gap: 5px 10px;
+                gap: 6px 12px;
             }}
             .hud-item {{
                 display: flex;
                 flex-direction: column;
             }}
             .hud-label {{
-                font-size: 9px;
+                font-size: 9.5px;
                 font-weight: 600;
                 color: #94a3b8;
-                letter-spacing: 0.3px;
+                letter-spacing: 0.4px;
                 text-transform: uppercase;
             }}
             .hud-val {{
-                font-size: 12px;
+                font-size: 13px;
                 font-weight: 700;
                 color: #f1f5f9;
             }}
             .hud-val-tag {{
                 display: inline-block;
-                padding: 1.5px 6px;
+                padding: 1px 6px;
                 border-radius: 4px;
-                font-size: 10.5px;
+                font-size: 11px;
                 font-weight: 700;
                 margin-top: 1px;
             }}
 
-            /* Quick Action Toolbar Top Right */
-            .map-top-bar {{
+            /* Quick-Jump Landmark Navigation Bar */
+            .map-quick-nav {{
                 position: absolute;
-                top: 12px;
-                right: 12px;
+                top: 14px;
+                right: 14px;
                 z-index: 1000;
-                display: {'none' if is_overview else 'flex'};
-                align-items: center;
-                gap: 5px;
-                flex-wrap: wrap;
-                justify-content: flex-end;
-            }}
-            .map-btn-pill {{
-                background: rgba(255, 255, 255, 0.94);
+                display: flex;
+                gap: 6px;
+                background: rgba(255, 255, 255, 0.92);
                 backdrop-filter: blur(8px);
+                padding: 4px 6px;
+                border-radius: 8px;
                 border: 1px solid #cbd5e1;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            }}
+            .nav-chip {{
+                background: #ffffff;
+                border: 1px solid #e2e8f0;
                 border-radius: 6px;
-                padding: 4px 8px;
-                font-size: 10.5px;
+                padding: 4px 10px;
+                font-size: 11px;
                 font-weight: 600;
                 color: #1e293b;
                 cursor: pointer;
-                box-shadow: 0 2px 6px rgba(0,0,0,0.1);
                 transition: all 0.15s ease;
-                display: inline-flex;
-                align-items: center;
-                gap: 4px;
+                outline: none;
             }}
-            .map-btn-pill:hover {{
+            .nav-chip:hover {{
                 background: #0f766e;
                 color: #ffffff;
                 border-color: #0f766e;
                 transform: translateY(-1px);
             }}
-
-            /* Dropdown Basemap Menu inside Map */
-            .basemap-menu-wrap {{
-                position: relative;
-                display: inline-block;
-            }}
-            .basemap-dropdown {{
-                position: absolute;
-                top: 100%;
-                right: 0;
-                margin-top: 4px;
-                background: rgba(255, 255, 255, 0.97);
-                backdrop-filter: blur(12px);
-                border: 1px solid #cbd5e1;
-                border-radius: 8px;
-                padding: 4px;
-                min-width: 150px;
-                box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-                display: none;
-                flex-direction: column;
-                gap: 2px;
-                z-index: 1010;
-            }}
-            .basemap-dropdown.show {{
-                display: flex;
-            }}
-            .basemap-opt {{
-                padding: 5px 8px;
-                font-size: 11px;
-                font-weight: 600;
-                color: #1e293b;
-                border-radius: 5px;
-                cursor: pointer;
-            }}
-            .basemap-opt:hover {{
+            .nav-chip.reset-chip {{
                 background: #f1f5f9;
-                color: #0f766e;
+                color: #475569;
             }}
-
-            /* Landmark Bar */
-            .landmark-bar {{
-                position: absolute;
-                top: 48px;
-                right: 12px;
-                z-index: 999;
-                display: {'none' if is_overview else 'flex'};
-                gap: 4px;
-                flex-wrap: wrap;
-                max-width: 440px;
-                justify-content: flex-end;
-            }}
-            .landmark-chip {{
-                background: rgba(255, 255, 255, 0.88);
-                backdrop-filter: blur(6px);
-                border: 1px solid #e2e8f0;
-                border-radius: 5px;
-                padding: 2.5px 7px;
-                font-size: 10px;
-                font-weight: 600;
-                color: #334155;
-                cursor: pointer;
-                transition: all 0.15s ease;
-            }}
-            .landmark-chip:hover {{
-                background: #0f766e;
+            .nav-chip.reset-chip:hover {{
+                background: #334155;
                 color: #ffffff;
-                border-color: #0f766e;
             }}
 
             /* Map Legend Bottom Left */
             .map-legend-box {{
                 position: absolute;
-                bottom: 12px;
-                left: 12px;
+                bottom: 18px;
+                left: 18px;
                 z-index: 1000;
-                background: rgba(255, 255, 255, 0.95);
+                background: rgba(255, 255, 255, 0.96);
                 backdrop-filter: blur(10px);
                 border: 1px solid #cbd5e1;
                 border-radius: 8px;
-                padding: {'6px 9px' if is_overview else '7px 11px'};
-                box-shadow: 0 4px 14px rgba(0,0,0,0.10);
-                font-size: 10.5px;
+                padding: 10px 14px;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+                font-size: 11px;
                 color: #1e293b;
-                max-width: 300px;
             }}
             .legend-title {{
                 font-weight: 700;
-                font-size: 10.5px;
-                margin-bottom: 3px;
+                font-size: 11.5px;
+                margin-bottom: 6px;
                 color: #0f172a;
                 display: flex;
                 align-items: center;
-                justify-content: space-between;
+                gap: 6px;
             }}
             .legend-swatches {{
                 display: flex;
-                height: 9px;
+                height: 12px;
                 border-radius: 3px;
                 overflow: hidden;
-                margin-bottom: 2px;
+                margin-bottom: 4px;
                 border: 1px solid #cbd5e1;
             }}
             .legend-swatch {{
-                flex: 1;
+                width: 28px;
                 height: 100%;
             }}
             .legend-swatch-hatch {{
-                width: 22px;
+                width: 30px;
                 height: 100%;
                 background: repeating-linear-gradient(
                     45deg,
-                    #64748b,
-                    #64748b 2px,
-                    #cbd5e1 2px,
-                    #cbd5e1 5px
+                    #94a3b8,
+                    #94a3b8 2px,
+                    #e2e8f0 2px,
+                    #e2e8f0 6px
                 );
             }}
             .legend-scale-labels {{
                 display: flex;
                 justify-content: space-between;
-                font-size: 8.5px;
+                font-size: 9.5px;
                 color: #64748b;
                 font-weight: 600;
+                margin-bottom: 3px;
             }}
             .legend-subnote {{
-                font-size: 8.5px;
+                font-size: 9.5px;
                 color: #64748b;
-                margin-top: 2px;
-                display: {'none' if is_overview else 'block'};
+            }}
+
+            /* Zoom level badge */
+            .zoom-level-label {{
+                position: absolute;
+                bottom: 18px;
+                right: 18px;
+                z-index: 1000;
+                background: rgba(255, 255, 255, 0.9);
+                border: 1px solid #cbd5e1;
+                border-radius: 6px;
+                padding: 3px 8px;
+                font-size: 11px;
+                color: #475569;
+                font-weight: 600;
             }}
 
             /* Custom Station Pin Badges */
@@ -390,17 +303,17 @@ def render_leaflet_fused_map(
                 cursor: pointer;
             }}
             .station-pin-badge {{
-                width: 30px;
-                height: 30px;
+                width: 32px;
+                height: 32px;
                 border-radius: 50%;
                 color: #ffffff;
                 font-weight: 800;
-                font-size: 10.5px;
+                font-size: 11px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 border: 2px solid #ffffff;
-                box-shadow: 0 3px 10px rgba(0,0,0,0.30);
+                box-shadow: 0 4px 10px rgba(0,0,0,0.35);
                 transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
                 z-index: 2;
             }}
@@ -408,26 +321,26 @@ def render_leaflet_fused_map(
                 transform: scale(1.22);
             }}
             .station-pin-name {{
-                font-size: 9px;
+                font-size: 10px;
                 font-weight: 700;
                 color: #0f172a;
-                background: rgba(255, 255, 255, 0.97);
-                padding: 1px 4.5px;
+                background: rgba(255, 255, 255, 0.96);
+                padding: 1.5px 6px;
                 border-radius: 4px;
                 border: 1px solid #cbd5e1;
-                margin-top: 1.5px;
+                margin-top: 2px;
                 white-space: nowrap;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                box-shadow: 0 2px 5px rgba(0,0,0,0.12);
                 z-index: 2;
             }}
             
-            /* Pulsing Radar Ring on Worst Hotspot / Anomaly */
+            /* Pulsing Radar Ring on Worst Hotspot */
             .radar-ripple {{
                 position: absolute;
                 top: 0;
                 left: 0;
-                width: 30px;
-                height: 30px;
+                width: 32px;
+                height: 32px;
                 border-radius: 50%;
                 border: 2px solid #ef4444;
                 animation: ripple 2.2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
@@ -442,239 +355,148 @@ def render_leaflet_fused_map(
                 100% {{ transform: scale(2.6); opacity: 0; }}
             }}
 
-            /* Animated Wind Streamlines */
-            .wind-streamline {{
+            /* Wind vector arrow marker */
+            .wind-arrow-wrap {{
+                display: flex;
+                align-items: center;
+                justify-content: center;
                 pointer-events: none;
-                animation: wind-flow 2.8s linear infinite;
+                transition: transform 0.3s ease;
             }}
-            @keyframes wind-flow {{
-                0% {{ transform: translate(0, 0) scale(0.9); opacity: 0.15; }}
-                50% {{ opacity: 0.85; }}
-                100% {{ transform: translate(var(--dx), var(--dy)) scale(1.05); opacity: 0; }}
+            .wind-arrow-icon {{
+                color: rgba(14, 165, 233, 0.85);
+                filter: drop-shadow(0 0 2px rgba(255,255,255,0.7));
             }}
 
-            /* Leaflet popup styling */
+            /* Leaflet popup customization */
             .leaflet-popup-content-wrapper {{
                 background: #ffffff;
-                border-radius: 8px;
-                padding: 3px;
+                border-radius: 10px;
+                padding: 4px;
                 box-shadow: 0 10px 25px rgba(0,0,0,0.2);
                 border: 1px solid #e2e8f0;
             }}
             .custom-cell-popup {{
-                padding: 5px 7px;
+                padding: 6px 8px;
                 font-family: inherit;
             }}
             .popup-station-name {{
-                font-size: 12.5px;
+                font-size: 14px;
                 font-weight: 700;
                 color: #0f172a;
-                margin-bottom: 2px;
+                margin-bottom: 3px;
             }}
             .popup-pm-val {{
-                font-size: 18px;
+                font-size: 20px;
                 font-weight: 800;
                 color: #ef4444;
                 margin-bottom: 2px;
             }}
             .popup-category {{
-                font-size: 11px;
+                font-size: 12px;
                 font-weight: 600;
                 color: #64748b;
-                margin-bottom: 4px;
+                margin-bottom: 6px;
             }}
             .popup-meta {{
-                font-size: 10px;
+                font-size: 11px;
                 color: #475569;
                 border-top: 1px solid #f1f5f9;
-                padding-top: 3px;
+                padding-top: 4px;
                 display: flex;
                 flex-direction: column;
-                gap: 1.5px;
-            }}
-
-            /* Responsive Map Controls on Mobile / Tablet */
-            @media (max-width: 768px) {{
-                .map-hud {{
-                    top: 8px;
-                    left: 8px;
-                    min-width: 170px;
-                    max-width: 220px;
-                    padding: 6px 10px;
-                }}
-                .hud-title {{
-                    font-size: 11px;
-                    max-width: 120px;
-                }}
-                .hud-val {{
-                    font-size: 11px;
-                }}
-                .hud-coords {{
-                    display: none;
-                }}
-                .map-top-bar {{
-                    top: 8px;
-                    right: 8px;
-                    gap: 3px;
-                }}
-                .map-btn-pill {{
-                    font-size: 9.5px;
-                    padding: 3px 6px;
-                }}
-                .landmark-bar {{
-                    top: auto;
-                    bottom: 8px;
-                    left: 8px;
-                    right: 8px;
-                    max-width: calc(100% - 16px);
-                    justify-content: flex-start;
-                    flex-wrap: nowrap;
-                    overflow-x: auto;
-                    -webkit-overflow-scrolling: touch;
-                    scrollbar-width: none;
-                    padding-bottom: 2px;
-                }}
-                .landmark-bar::-webkit-scrollbar {{
-                    display: none;
-                }}
-                .landmark-chip {{
-                    flex-shrink: 0;
-                    white-space: nowrap;
-                    font-size: 9.5px;
-                    padding: 2.5px 6px;
-                }}
-                .map-legend-box {{
-                    bottom: 40px;
-                    left: 8px;
-                    max-width: 200px;
-                    padding: 5px 8px;
-                    font-size: 9.5px;
-                }}
-                .legend-subnote {{
-                    display: none;
-                }}
-            }}
-
-            @media (max-width: 480px) {{
-                .landmark-bar {{
-                    display: none;
-                }}
-                .map-legend-box {{
-                    bottom: 8px;
-                    left: 8px;
-                    max-width: 160px;
-                }}
+                gap: 2px;
             }}
         </style>
     </head>
     <body>
-        <div id="map-wrapper">
+        <div id="map-container">
             <div id="map"></div>
 
-            <!-- Floating Glassmorphic Inspection HUD -->
+            <!-- Floating Glassmorphism Inspection HUD -->
             <div class="map-hud" id="map-hud">
                 <div class="hud-header">
                     <div class="hud-title-box">
                         <span class="hud-live-dot"></span>
                         <span class="hud-title" id="hud-title">Delhi-NCR 1 km Surface</span>
                     </div>
-                    <div class="hud-actions">
-                        <span class="hud-coords" id="hud-coords">28.614°N, 77.209°E</span>
-                        <button class="hud-btn-toggle" onclick="toggleHud()" title="Collapse/Expand Telemetry">−</button>
-                    </div>
+                    <span class="hud-coords" id="hud-coords">28.614°N, 77.209°E</span>
                 </div>
-                <div class="hud-body" id="hud-body">
-                    <div class="hud-grid">
-                        <div class="hud-item">
-                            <span class="hud-label">Estimated PM₂.₅</span>
-                            <span class="hud-val" id="hud-pm">Hover over surface</span>
-                        </div>
-                        <div class="hud-item">
-                            <span class="hud-label">Satellite AOD</span>
-                            <span class="hud-val" id="hud-aod">--</span>
-                        </div>
-                        <div class="hud-item">
-                            <span class="hud-label">Model Sigma (±σ)</span>
-                            <span class="hud-val" id="hud-sigma">--</span>
-                        </div>
-                        <div class="hud-item">
-                            <span class="hud-label">Data Ingestion</span>
-                            <span class="hud-val" id="hud-source">--</span>
-                        </div>
+                <div class="hud-grid">
+                    <div class="hud-item">
+                        <span class="hud-label">Estimated PM₂.₅</span>
+                        <span class="hud-val" id="hud-pm">Hover over map</span>
+                    </div>
+                    <div class="hud-item">
+                        <span class="hud-label">Satellite AOD</span>
+                        <span class="hud-val" id="hud-aod">--</span>
+                    </div>
+                    <div class="hud-item">
+                        <span class="hud-label">Model Sigma</span>
+                        <span class="hud-val" id="hud-sigma">--</span>
+                    </div>
+                    <div class="hud-item">
+                        <span class="hud-label">Data Ingestion</span>
+                        <span class="hud-val" id="hud-source">--</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Top Action Toolbar -->
-            <div class="map-top-bar">
-                <div class="basemap-menu-wrap">
-                    <button class="map-btn-pill" onclick="toggleBasemapMenu()" id="btn-basemap">
-                        🗺️ Basemap ▾
-                    </button>
-                    <div class="basemap-dropdown" id="basemap-dropdown">
-                        <div class="basemap-opt" onclick="setBasemap('positron')">🏙️ Light Positron</div>
-                        <div class="basemap-opt" onclick="setBasemap('dark_matter')">🌃 Dark Matter</div>
-                        <div class="basemap-opt" onclick="setBasemap('satellite_hybrid')">🛰️ Satellite Hybrid</div>
-                        <div class="basemap-opt" onclick="setBasemap('topographic')">⛰️ Topographic</div>
-                        <div class="basemap-opt" onclick="setBasemap('streets')">🛣️ OpenStreetMap</div>
-                    </div>
-                </div>
-
-                <button class="map-btn-pill" onclick="flyToLoc(28.6139, 77.2090, 10, 'Delhi-NCR')">
-                    🔄 Reset View
-                </button>
-            </div>
-
-            <!-- Landmark Navigation -->
-            <div class="landmark-bar">
-                <button class="landmark-chip" onclick="flyToLoc(28.6468, 77.3160, 13, 'Anand Vihar')">📍 Anand Vihar</button>
-                <button class="landmark-chip" onclick="flyToLoc(28.7328, 77.1706, 13, 'Jahangirpuri')">📍 Jahangirpuri</button>
-                <button class="landmark-chip" onclick="flyToLoc(28.6304, 77.2177, 13, 'Connaught Pl')">📍 Central Delhi</button>
-                <button class="landmark-chip" onclick="flyToLoc(28.5562, 77.1000, 13, 'IGI Airport')">📍 IGI Airport</button>
-                <button class="landmark-chip" onclick="flyToLoc(28.5300, 77.2700, 13, 'Okhla Hub')">📍 Okhla</button>
-                <button class="landmark-chip" onclick="flyToLoc(28.4595, 77.0266, 13, 'Gurugram')">📍 Gurugram</button>
-                <button class="landmark-chip" onclick="flyToLoc(28.5700, 77.3200, 13, 'Noida')">📍 Noida</button>
+            <!-- Quick Landmark Navigation Bar -->
+            <div class="map-quick-nav">
+                <button class="nav-chip" onclick="flyToLoc(28.6468, 77.3160, 12, 'Anand Vihar')">📍 Anand Vihar</button>
+                <button class="nav-chip" onclick="flyToLoc(28.7328, 77.1706, 12, 'Jahangirpuri')">📍 Jahangirpuri</button>
+                <button class="nav-chip" onclick="flyToLoc(28.6304, 77.2177, 12, 'Central Delhi')">📍 Connaught Pl</button>
+                <button class="nav-chip" onclick="flyToLoc(28.5562, 77.1000, 12, 'IGI Airport')">📍 IGI Airport</button>
+                <button class="nav-chip reset-chip" onclick="flyToLoc(28.6139, 77.2090, 10, 'Delhi-NCR')">🔄 NCR Full</button>
             </div>
 
             <!-- Bottom Left Legend -->
             <div class="map-legend-box">
                 <div class="legend-title">
                     <span>PM<sub>2.5</sub> (µg/m³) · 1 km Surface</span>
-                    <span style="font-weight:600; color:#0f766e; font-size:9.5px;">CPCB Scale</span>
                 </div>
                 <div class="legend-swatches">
-                    <div class="legend-swatch" style="background:#10b981;" title="0-30 Good"></div>
+                    <div class="legend-swatch" style="background:#22c55e;" title="0-30 Good"></div>
                     <div class="legend-swatch" style="background:#84cc16;" title="31-60 Satisfactory"></div>
                     <div class="legend-swatch" style="background:#eab308;" title="61-90 Moderate"></div>
                     <div class="legend-swatch" style="background:#f97316;" title="91-120 Poor"></div>
                     <div class="legend-swatch" style="background:#ef4444;" title="121-250 Very Poor"></div>
                     <div class="legend-swatch" style="background:#7f1d1d;" title="250+ Severe"></div>
-                    <div class="legend-swatch-hatch" title="Hatched: RF Gap-filled surface"></div>
+                    <div class="legend-swatch-hatch" title="Gap-filled model"></div>
                 </div>
                 <div class="legend-scale-labels">
                     <span>0</span><span>30</span><span>60</span><span>90</span><span>120</span><span>250+</span>
                 </div>
-                <div class="legend-subnote">Hatched = Gap-filled (Cloud/Haze) · Live cursor telemetry active</div>
+                <div class="legend-subnote">Hatched = Gap-filled (Cloud/Haze) · Hover for pixel telemetry</div>
             </div>
+
+            <div class="zoom-level-label" id="zoom-label">Delhi · Zoom 10</div>
         </div>
+
+        <!-- SVG Patterns for Gap-fill Hatching -->
+        <svg width="0" height="0" style="position:absolute;">
+            <defs>
+                <pattern id="gapfill-hatch" width="8" height="8" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
+                    <line x1="0" y1="0" x2="0" y2="8" stroke="#0f172a" stroke-width="2.5" opacity="0.65" />
+                </pattern>
+            </defs>
+        </svg>
 
         <script>
             var center = {DELHI_CENTER};
             var map = L.map('map', {{
                 center: center,
                 zoom: 10,
-                zoomControl: false,
+                zoomControl: true,
                 attributionControl: false
             }});
 
-            // Place zoom buttons at bottom-right so they never collide with the HUD
-            L.control.zoom({{ position: 'bottomright' }}).addTo(map);
+            map.on('zoomend', function() {{
+                document.getElementById('zoom-label').innerText = 'Delhi · Zoom ' + map.getZoom();
+            }});
 
-            // Invalidate size to ensure clean tile rendering
-            setTimeout(function() {{ map.invalidateSize(); }}, 200);
-            window.addEventListener('resize', function() {{ map.invalidateSize(); }});
-
-            // Retina & High-Res Basemaps
+            // High-Resolution & Retina Basemap Providers
             var basemaps = {{
                 "positron": L.tileLayer('https://{{s}}.basemaps.cartocdn.com/light_all/{{z}}/{{x}}/{{y}}{{r}}.png', {{
                     maxZoom: 20,
@@ -712,38 +534,9 @@ def render_leaflet_fused_map(
                 }})
             }};
 
-            var currentBasemapKey = "{theme_key}";
-            var activeBasemapLayer = basemaps[currentBasemapKey] || basemaps["positron"];
+            var requestedTheme = "{theme_key}";
+            var activeBasemapLayer = basemaps[requestedTheme] || basemaps["positron"];
             activeBasemapLayer.addTo(map);
-
-            window.setBasemap = function(key) {{
-                if (basemaps[key]) {{
-                    map.removeLayer(activeBasemapLayer);
-                    activeBasemapLayer = basemaps[key];
-                    activeBasemapLayer.addTo(map);
-                    currentBasemapKey = key;
-                    var menu = document.getElementById('basemap-dropdown');
-                    if (menu) menu.classList.remove('show');
-                }}
-            }};
-
-            window.toggleBasemapMenu = function() {{
-                var menu = document.getElementById('basemap-dropdown');
-                if (menu) menu.classList.toggle('show');
-            }};
-
-            document.addEventListener('click', function(e) {{
-                var wrap = document.querySelector('.basemap-menu-wrap');
-                if (wrap && !wrap.contains(e.target)) {{
-                    var menu = document.getElementById('basemap-dropdown');
-                    if (menu) menu.classList.remove('show');
-                }}
-            }});
-
-            window.toggleHud = function() {{
-                var hud = document.getElementById('map-hud');
-                if (hud) hud.classList.toggle('collapsed');
-            }};
 
             var gridData = {grid_json};
             var stationsData = {stations_json};
@@ -753,7 +546,7 @@ def render_leaflet_fused_map(
             var layerOpacity = {opacity};
             var showStations = {"true" if show_stations else "false"};
             var showAnomalies = {"true" if show_anomalies else "false"};
-            var selectedStation = "{sel_station_str}";
+            var selectedStation = "{selected_station_name}";
 
             var hudTitle = document.getElementById('hud-title');
             var hudCoords = document.getElementById('hud-coords');
@@ -765,37 +558,35 @@ def render_leaflet_fused_map(
             // Fly to landmark function
             window.flyToLoc = function(lat, lon, zoom, name) {{
                 map.flyTo([lat, lon], zoom, {{ duration: 1.2, easeLinearity: 0.25 }});
-                if (hudTitle) hudTitle.innerText = name;
-                if (hudCoords) hudCoords.innerText = lat.toFixed(3) + '°N, ' + lon.toFixed(3) + '°E';
+                hudTitle.innerText = name;
+                hudCoords.innerText = lat.toFixed(3) + '°N, ' + lon.toFixed(3) + '°E';
             }};
 
-            // 1. Smooth Heatmap Mode (Safely guarded)
-            if (layerMode === "smooth" && typeof L.heatLayer === 'function') {{
-                try {{
-                    var heatPoints = gridData.map(function(cell) {{
-                        return [cell.center_lat, cell.center_lon, Math.min(1.0, cell.pm25 / 240.0)];
-                    }});
-                    L.heatLayer(heatPoints, {{
-                        radius: 38,
-                        blur: 26,
-                        maxZoom: 14,
-                        max: 1.0,
-                        gradient: {{
-                            0.12: '#10b981',
-                            0.28: '#84cc16',
-                            0.45: '#eab308',
-                            0.65: '#f97316',
-                            0.85: '#ef4444',
-                            1.0: '#7f1d1d'
-                        }}
-                    }}).addTo(map);
-                }} catch (e) {{
-                    console.warn("Smooth heatmap error:", e);
-                }}
+            // 1. Smooth Heatmap Mode via Leaflet-Heat
+            if (layerMode === "smooth") {{
+                var heatPoints = gridData.map(function(cell) {{
+                    return [cell.center_lat, cell.center_lon, Math.min(1.0, cell.pm25 / 235.0)];
+                }});
+                L.heatLayer(heatPoints, {{
+                    radius: 36,
+                    blur: 24,
+                    maxZoom: 14,
+                    max: 1.0,
+                    gradient: {{
+                        0.15: '#22c55e',
+                        0.30: '#84cc16',
+                        0.48: '#eab308',
+                        0.65: '#f97316',
+                        0.85: '#ef4444',
+                        1.0: '#7f1d1d'
+                    }}
+                }}).addTo(map);
             }}
 
-            // 2. Discrete 1 km Surface Rectangles
-            gridData.forEach(function(cell) {{
+            // 2. High-Resolution Discrete 1 km Grid Cells (if not original basemap mode and not purely smooth)
+            var highlightedRect = null;
+            if (layerMode !== "original") {{
+                gridData.forEach(function(cell) {{
                 var bounds = [[cell.lat_min, cell.lon_min], [cell.lat_max, cell.lon_max]];
                 var fillColor = cell.color;
                 var fillOpacity = (layerMode === "smooth") ? 0.05 : layerOpacity;
@@ -804,10 +595,10 @@ def render_leaflet_fused_map(
 
                 if (layerMode === "aod") {{
                     var aodVal = cell.aod;
-                    fillColor = aodVal > 0.85 ? "#b91c1c" : aodVal > 0.60 ? "#f97316" : aodVal > 0.35 ? "#eab308" : "#10b981";
+                    fillColor = aodVal > 0.85 ? "#b91c1c" : aodVal > 0.60 ? "#f97316" : aodVal > 0.35 ? "#eab308" : "#22c55e";
                 }} else if (layerMode === "gap_filled") {{
                     if (!cell.is_gap_filled) {{
-                        fillOpacity = 0.05;
+                        fillOpacity = 0.06;
                     }} else {{
                         fillColor = "#ef4444";
                         fillOpacity = 0.85;
@@ -827,21 +618,21 @@ def render_leaflet_fused_map(
                         color: "transparent",
                         weight: 0,
                         fillColor: "#0f172a",
-                        fillOpacity: 0.20
+                        fillOpacity: 0.22
                     }}).addTo(map);
                 }}
 
                 // Hover interaction: Live update HUD
                 rect.on('mouseover', function(e) {{
-                    rect.setStyle({{ color: '#38bdf8', weight: 2.2 }});
+                    rect.setStyle({{ color: '#38bdf8', weight: 2.0 }});
                     rect.bringToFront();
                     
-                    if (hudTitle) hudTitle.innerText = cell.nearest_station;
-                    if (hudCoords) hudCoords.innerText = cell.center_lat.toFixed(3) + '°N, ' + cell.center_lon.toFixed(3) + '°E';
-                    if (hudPm) hudPm.innerHTML = `<span class="hud-val-tag" style="background:${{cell.bg_color}}; color:${{cell.text_color}};">${{cell.pm25}} µg/m³ (${{cell.category}})</span>`;
-                    if (hudAod) hudAod.innerText = cell.aod + ' (MCD19A2)';
-                    if (hudSigma) hudSigma.innerText = '± ' + (cell.sigma || 14.2) + ' µg/m³';
-                    if (hudSource) hudSource.innerText = cell.is_gap_filled ? 'Gap-Filled (RF Model)' : 'MODIS Satellite Fused';
+                    hudTitle.innerText = cell.nearest_station;
+                    hudCoords.innerText = cell.center_lat.toFixed(3) + '°N, ' + cell.center_lon.toFixed(3) + '°E';
+                    hudPm.innerHTML = `<span class="hud-val-tag" style="background:${{cell.bg_color}}; color:${{cell.text_color}};">${{cell.pm25}} µg/m³ (${{cell.category}})</span>`;
+                    hudAod.innerText = cell.aod + ' (MCD19A2)';
+                    hudSigma.innerText = '± ' + (cell.sigma || 14.2) + ' µg/m³';
+                    hudSource.innerText = cell.is_gap_filled ? 'Gap-Filled (RF Model)' : 'MODIS Satellite Fused';
                 }});
 
                 rect.on('mouseout', function(e) {{
@@ -857,27 +648,25 @@ def render_leaflet_fused_map(
                         <div class="popup-meta">
                             <span>🛰️ MODIS MAIAC AOD: <strong>${{cell.aod}}</strong></span>
                             <span>🎯 Uncertainty: <strong>± ${{cell.sigma || 14.2}} µg/m³</strong></span>
-                            <span>📡 Processing: <strong>${{cell.is_gap_filled ? 'Gap-Filled RF' : 'AOD Satellite Fused'}}</strong></span>
+                            <span>📡 Data: <strong>${{cell.is_gap_filled ? 'Gap-Filled Model' : 'Satellite AOD Fused'}}</strong></span>
                         </div>
                     </div>
                 `;
                 rect.bindPopup(popupHtml);
-            }});
+                }});
+            }}
 
-            // 3. Live Animated Wind Flow Streamlines
+            // 3. Live Wind Streamlines & Vectors
             if (layerMode === "wind" || { "true" if show_wind else "false" }) {{
                 var windDir = windInfo.wind_direction || 290;
                 var windSpd = windInfo.wind_speed || 5.4;
-                var rad = (windDir * Math.PI) / 180.0;
-                var dx = Math.round(-Math.sin(rad) * 26);
-                var dy = Math.round(Math.cos(rad) * 26);
-
                 var arrowSvg = `
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="wind-streamline" style="--dx:${{dx}}px; --dy:${{dy}}px; transform: rotate(${{windDir + 90}}deg);">
-                        <path d="M12 2L19 21L12 17L5 21L12 2Z" fill="#38bdf8" stroke="#ffffff" stroke-width="1.2" opacity="0.85"/>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="transform: rotate(${{windDir + 90}}deg);">
+                        <path d="M12 2L19 21L12 17L5 21L12 2Z" fill="#0284c7" stroke="#ffffff" stroke-width="1.2" opacity="0.85"/>
                     </svg>
                 `;
                 
+                // Place 25 vector indicators across the domain
                 var latSpan = ncrBounds.lat_max - ncrBounds.lat_min;
                 var lonSpan = ncrBounds.lon_max - ncrBounds.lon_min;
                 for (var r_idx = 1; r_idx <= 5; r_idx++) {{
@@ -892,21 +681,21 @@ def render_leaflet_fused_map(
                             iconAnchor: [12, 12]
                         }});
                         
-                        L.marker([wLat, wLon], {{ icon: windIcon, interactive: false }}).addTo(map);
+                        var windMarker = L.marker([wLat, wLon], {{ icon: windIcon, interactive: false }}).addTo(map);
                     }}
                 }}
             }}
 
-            // 4. Station Markers with Numeric Badges & Dual Radar Ripples
+            // 4. Station Markers with Numeric Badges & Radar Rings
             if (showStations) {{
                 stationsData.forEach(function(st) {{
                     var isWorst = st.is_worst;
-                    var isAnomaly = st.anomaly && showAnomalies;
+                    var isTarget = (st.name === selectedStation);
                     var markerColor = st.pm25 >= 121 ? "#ef4444" : st.pm25 >= 91 ? "#f97316" : "#eab308";
                     
                     var badgeHtml = `
                         <div class="station-pin-container ${{isWorst ? 'worst-station' : ''}}">
-                            ${{(isWorst || isAnomaly) ? '<div class="radar-ripple"></div><div class="radar-ripple delayed"></div>' : ''}}
+                            ${{isWorst ? '<div class="radar-ripple"></div><div class="radar-ripple delayed"></div>' : ''}}
                             <div class="station-pin-badge" style="background:${{markerColor}};">
                                 <span class="station-pin-val">${{st.pm25}}</span>
                             </div>
@@ -917,73 +706,42 @@ def render_leaflet_fused_map(
                     var pinIcon = L.divIcon({{
                         html: badgeHtml,
                         className: 'station-badge-icon',
-                        iconSize: [34, 42],
-                        iconAnchor: [17, 21]
+                        iconSize: [36, 44],
+                        iconAnchor: [18, 22]
                     }});
 
                     var marker = L.marker([st.lat, st.lon], {{ icon: pinIcon, zIndexOffset: isWorst ? 1000 : 500 }}).addTo(map);
 
                     marker.on('click', function() {{
-                        map.flyTo([st.lat, st.lon], 13, {{ duration: 1.2 }});
-                        if (hudTitle) hudTitle.innerText = st.name + ' (Ground Station)';
-                        if (hudCoords) hudCoords.innerText = st.lat.toFixed(3) + '°N, ' + st.lon.toFixed(3) + '°E';
-                        if (hudPm) hudPm.innerHTML = `<span class="hud-val-tag" style="background:#fee2e2; color:#991b1b;">${{st.pm25}} µg/m³ (${{st.status}})</span>`;
-                        if (hudAod) hudAod.innerText = (st.aod || 0.48) + ' (Collocated)';
-                        if (hudSigma) hudSigma.innerText = 'MAE ' + (st.loso_mae || 24.5) + ' µg/m³';
-                        if (hudSource) hudSource.innerText = st.source || 'CPCB Telemetry';
+                        map.flyTo([st.lat, st.lon], 12, {{ duration: 1.2 }});
+                        hudTitle.innerText = st.name + ' (CPCB Sensor)';
+                        hudCoords.innerText = st.lat.toFixed(3) + '°N, ' + st.lon.toFixed(3) + '°E';
+                        hudPm.innerHTML = `<span class="hud-val-tag" style="background:#fee2e2; color:#991b1b;">${{st.pm25}} µg/m³ (${{st.status}})</span>`;
+                        hudAod.innerText = (st.aod || 0.48) + ' (Collocated)';
+                        hudSigma.innerText = 'MAE ' + (st.loso_mae || 24.5) + ' µg/m³';
+                        hudSource.innerText = st.source || 'CPCB Official Telemetry';
                     }});
 
                     var tooltipContent = `
                         <div style="font-family:sans-serif; padding:2px;">
                             <strong>${{st.name}}</strong><br>
                             PM₂.₅: <b>${{st.pm25}} µg/m³</b> (${{st.status}})<br>
-                            <span style="font-size:10px; color:#64748b;">Telemetry: ${{st.source}}</span>
+                            <span style="font-size:10px; color:#64748b;">Source: ${{st.source}}</span>
                         </div>
                     `;
                     marker.bindTooltip(tooltipContent, {{ direction: 'top', offset: [0, -16] }});
                 }});
             }}
 
-            // 5. NASA FIRMS VIIRS Active Fire Hotspots (Stubble Burning / Biomass)
+            // 5. Active Fire Hotspots (NASA FIRMS)
             var showFires = {show_fires_js};
             var firesData = {fires_json};
-
             if (showFires && firesData && firesData.length > 0) {{
                 firesData.forEach(function(f) {{
-                    var fireHtml = `
-                        <div style="position:relative; width:28px; height:28px; display:flex; align-items:center; justify-content:center;">
-                            <div class="radar-ripple" style="border-color:#ef4444; background:rgba(239, 68, 68, 0.25);"></div>
-                            <span style="font-size:18px; filter: drop-shadow(0 0 5px #ef4444); cursor:pointer;">🔥</span>
-                        </div>
-                    `;
-                    var fireIcon = L.divIcon({{
-                        html: fireHtml,
-                        className: 'fire-badge-icon',
-                        iconSize: [28, 28],
-                        iconAnchor: [14, 14]
-                    }});
-                    var fMarker = L.marker([f.lat, f.lon], {{ icon: fireIcon, zIndexOffset: 750 }}).addTo(map);
-
-                    fMarker.on('click', function() {{
-                        map.flyTo([f.lat, f.lon], 12, {{ duration: 1.2 }});
-                        if (hudTitle) hudTitle.innerText = 'Active Fire Hotspot (NASA VIIRS)';
-                        if (hudCoords) hudCoords.innerText = f.lat.toFixed(3) + '°N, ' + f.lon.toFixed(3) + '°E';
-                        if (hudPm) hudPm.innerHTML = `<span class="hud-val-tag" style="background:#fef2f2; color:#b91c1c; border-color:#fca5a5;">FRP: ${{f.frp}} MW</span>`;
-                        if (hudAod) hudAod.innerText = 'Brightness: ' + f.brightness + ' K';
-                        if (hudSigma) hudSigma.innerText = 'Satellite: ' + (f.satellite || 'VIIRS');
-                        if (hudSource) hudSource.innerText = (f.source || 'NASA FIRMS') + ' (' + (f.time || '') + ')';
-                    }});
-
-                    var fTooltip = `
-                        <div style="font-family:sans-serif; padding:4px 6px; font-size:11px;">
-                            <strong style="color:#b91c1c;">🔥 NASA VIIRS Active Fire Hotspot</strong><br>
-                            Fire Radiative Power: <b>${{f.frp}} MW</b><br>
-                            Brightness Temp: <b>${{f.brightness}} K</b><br>
-                            Acquisition: <b>${{f.date}} ${{f.time}}</b><br>
-                            <span style="font-size:10px; color:#64748b;">Source: ${{f.source || 'NASA FIRMS NRT'}}</span>
-                        </div>
-                    `;
-                    fMarker.bindTooltip(fTooltip, {{ direction: 'top', offset: [0, -12] }});
+                    var fireHtml = '<div style="position:relative; width:26px; height:26px; display:flex; align-items:center; justify-content:center;"><div class="radar-ripple" style="border-color:#ef4444; background:rgba(239,68,68,0.25);"></div><span style="font-size:18px; filter: drop-shadow(0 0 5px #ef4444); cursor:pointer;">🔥</span></div>';
+                    var fireIcon = L.divIcon({{ html: fireHtml, className: 'fire-icon', iconSize: [26, 26], iconAnchor: [13, 13] }});
+                    var fMarker = L.marker([f.lat, f.lon], {{ icon: fireIcon, zIndexOffset: 700 }}).addTo(map);
+                    fMarker.bindTooltip('<div style="font-family:sans-serif; padding:4px 6px; font-size:11px;"><strong style="color:#b91c1c;">🔥 Active Fire Hotspot</strong><br>Power (FRP): <b>' + f.frp + ' MW</b><br>Brightness: <b>' + f.brightness + ' K</b><br>Acquired: <b>' + f.date + ' ' + (f.time || '') + '</b><br><span style="font-size:10px; color:#64748b;">Source: ' + (f.source || 'NASA FIRMS') + '</span></div>', {{ direction: 'top', offset: [0, -10] }});
                 }});
             }}
         </script>
@@ -996,12 +754,12 @@ def render_combined_hotspot_map(
     grid_cells: List[Dict[str, Any]],
     hotspots: List[Dict[str, Any]],
     sector_filter: str = "All",
-    height: int = 420
+    height: int = 400
 ):
     """
-    Renders Enhanced Hotspot Map for Combined Insights.
-    Overlays sector-coded glowing emission hotspots with thermal footprint rings,
-    interactive facility telemetry HUD, and quick fly-to controls.
+    Renders Hotspot Map for Combined Insights (Wireframe 4).
+    Overlays purple emission hotspot diamonds/squares sized by emissions tonnage
+    over the high-resolution 1 km PM2.5 grid surface on a crisp Retina basemap.
     """
     grid_json = _safe_json_dumps(grid_cells)
     
@@ -1021,161 +779,40 @@ def render_combined_hotspot_map(
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
         <style>
-            * {{ box-sizing: border-box; }}
-            body {{ margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0b1120; }}
+            body {{ margin: 0; padding: 0; font-family: -apple-system, sans-serif; }}
+            #hotspot-map {{ width: 100%; height: {height}px; border-radius: 12px; z-index: 1; border: 1px solid #cbd5e1; }}
             
-            #hotspot-wrapper {{
-                position: relative;
-                width: 100%;
-                height: {height}px;
-                border-radius: 12px;
-                overflow: hidden;
-                border: 1px solid #cbd5e1;
-                box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15);
-            }}
-            #hotspot-map {{ width: 100%; height: 100%; background: #0f172a; }}
-            
-            /* Sector Coded Glowing Diamonds */
             .hotspot-marker {{
+                background: linear-gradient(135deg, #8b5cf6, #6d28d9);
                 border: 2px solid #ffffff;
+                box-shadow: 0 4px 14px rgba(109, 40, 217, 0.6);
                 transform: rotate(45deg);
                 border-radius: 4px;
-                transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-                cursor: pointer;
+                transition: transform 0.2s ease;
             }}
             .hotspot-marker:hover {{
-                transform: rotate(45deg) scale(1.35);
+                transform: rotate(45deg) scale(1.2);
             }}
-            .hotspot-power {{
-                background: linear-gradient(135deg, #f59e0b, #d97706);
-                box-shadow: 0 4px 14px rgba(217, 119, 6, 0.7);
-            }}
-            .hotspot-industry {{
-                background: linear-gradient(135deg, #8b5cf6, #6d28d9);
-                box-shadow: 0 4px 14px rgba(109, 40, 217, 0.7);
-            }}
-            .hotspot-transport {{
-                background: linear-gradient(135deg, #0284c7, #0369a1);
-                box-shadow: 0 4px 14px rgba(2, 132, 199, 0.7);
-            }}
-            .hotspot-waste {{
-                background: linear-gradient(135deg, #10b981, #047857);
-                box-shadow: 0 4px 14px rgba(16, 185, 129, 0.7);
-            }}
-
-            /* Quick Nav Bar */
-            .hotspot-top-bar {{
+            .hotspot-legend {{
                 position: absolute;
-                top: 12px;
-                right: 12px;
+                bottom: 16px;
+                left: 16px;
                 z-index: 1000;
-                display: flex;
-                gap: 5px;
-            }}
-            .hotspot-chip {{
-                background: rgba(255, 255, 255, 0.94);
+                background: rgba(255, 255, 255, 0.95);
                 backdrop-filter: blur(8px);
                 border: 1px solid #cbd5e1;
                 border-radius: 6px;
-                padding: 4px 8px;
-                font-size: 10.5px;
-                font-weight: 600;
+                padding: 6px 14px;
+                font-size: 11px;
+                font-weight: 700;
                 color: #334155;
-                cursor: pointer;
-                transition: all 0.15s ease;
-            }}
-            .hotspot-chip:hover {{
-                background: #6d28d9;
-                color: #ffffff;
-                border-color: #6d28d9;
-            }}
-
-            /* Floating Legend */
-            .hotspot-legend {{
-                position: absolute;
-                bottom: 12px;
-                left: 12px;
-                z-index: 1000;
-                background: rgba(255, 255, 255, 0.96);
-                backdrop-filter: blur(8px);
-                border: 1px solid #cbd5e1;
-                border-radius: 8px;
-                padding: 7px 11px;
-                font-size: 10.5px;
-                color: #334155;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-                max-width: 320px;
-            }}
-            .legend-item {{
-                display: inline-flex;
-                align-items: center;
-                gap: 5px;
-                margin-right: 8px;
-                margin-top: 2px;
-                font-size: 10px;
-                font-weight: 600;
-            }}
-            .legend-badge {{
-                width: 9px;
-                height: 9px;
-                transform: rotate(45deg);
-                border-radius: 2px;
-            }}
-
-            /* Responsive Hotspot Map Controls */
-            @media (max-width: 768px) {{
-                .hotspot-top-bar {{
-                    top: 8px;
-                    right: 8px;
-                    left: 8px;
-                    justify-content: flex-end;
-                    overflow-x: auto;
-                    flex-wrap: nowrap;
-                    -webkit-overflow-scrolling: touch;
-                    scrollbar-width: none;
-                }}
-                .hotspot-chip {{
-                    flex-shrink: 0;
-                    white-space: nowrap;
-                    font-size: 9.5px;
-                    padding: 3px 6px;
-                }}
-                .hotspot-legend {{
-                    bottom: 8px;
-                    left: 8px;
-                    max-width: calc(100% - 16px);
-                    padding: 5px 8px;
-                    font-size: 9.5px;
-                }}
-                .legend-item {{
-                    font-size: 9px;
-                    margin-right: 6px;
-                }}
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             }}
         </style>
     </head>
     <body>
-        <div id="hotspot-wrapper">
-            <div id="hotspot-map"></div>
-
-            <div class="hotspot-top-bar">
-                <button class="hotspot-chip" onclick="map.flyTo([28.5085, 77.3039], 13)">📍 Badarpur Hub</button>
-                <button class="hotspot-chip" onclick="map.flyTo([28.5833, 77.5500], 13)">📍 Dadri NTPC</button>
-                <button class="hotspot-chip" onclick="map.flyTo([28.7900, 77.0400], 13)">📍 Bawana Ind</button>
-                <button class="hotspot-chip" onclick="map.flyTo([28.6139, 77.2090], 10)">🔄 NCR Full</button>
-            </div>
-
-            <div class="hotspot-legend">
-                <div style="font-weight:700; color:#0f172a; margin-bottom:3px;">Climate TRACE Point Sources · kt CO₂e</div>
-                <div>
-                    <span class="legend-item"><span class="legend-badge" style="background:#f59e0b;"></span>Power</span>
-                    <span class="legend-item"><span class="legend-badge" style="background:#8b5cf6;"></span>Industry</span>
-                    <span class="legend-item"><span class="legend-badge" style="background:#0284c7;"></span>Transport</span>
-                    <span class="legend-item"><span class="legend-badge" style="background:#10b981;"></span>Waste</span>
-                </div>
-            </div>
-        </div>
-
+        <div id="hotspot-map"></div>
+        <div class="hotspot-legend">◆ Climate TRACE Emission Hotspot · Sized by kt CO₂e</div>
         <script>
             var map = L.map('hotspot-map', {{
                 center: {DELHI_CENTER},
@@ -1183,9 +820,6 @@ def render_combined_hotspot_map(
                 zoomControl: true,
                 attributionControl: false
             }});
-
-            setTimeout(function() {{ map.invalidateSize(); }}, 200);
-            window.addEventListener('resize', function() {{ map.invalidateSize(); }});
             
             L.tileLayer('https://{{s}}.basemaps.cartocdn.com/light_all/{{z}}/{{x}}/{{y}}{{r}}.png', {{
                 maxZoom: 20,
@@ -1197,38 +831,22 @@ def render_combined_hotspot_map(
             var gridData = {grid_json};
             var hotspotsData = {hotspots_json};
 
-            // Draw faded 1km PM2.5 background surface
+            // Draw faded 1km grid background
             gridData.forEach(function(cell) {{
                 var bounds = [[cell.lat_min, cell.lon_min], [cell.lat_max, cell.lon_max]];
                 L.rectangle(bounds, {{
                     color: "transparent",
                     weight: 0,
                     fillColor: cell.color,
-                    fillOpacity: 0.30
+                    fillOpacity: 0.32
                 }}).addTo(map);
             }});
 
-            // Draw emission hotspots with concentric plume rings
+            // Draw Emission Hotspots as glowing purple diamonds
             hotspotsData.forEach(function(hs) {{
-                var sec = (hs.sector || "Power").toLowerCase();
-                var markerClass = sec.includes("ind") ? "hotspot-industry" : sec.includes("trans") ? "hotspot-transport" : sec.includes("waste") ? "hotspot-waste" : "hotspot-power";
-                var color = sec.includes("ind") ? "#8b5cf6" : sec.includes("trans") ? "#0284c7" : sec.includes("waste") ? "#10b981" : "#f59e0b";
-
-                // Concentric thermal plume footprint ring
-                var radiusMeters = Math.min(6000, Math.max(1200, (hs.emissions_kt || 2000) * 0.7));
-                L.circle([hs.lat, hs.lon], {{
-                    radius: radiusMeters,
-                    color: color,
-                    weight: 1,
-                    opacity: 0.45,
-                    fillColor: color,
-                    fillOpacity: 0.08
-                }}).addTo(map);
-
-                // Diamond icon
-                var size = hs.marker_size || 24;
+                var size = hs.marker_size;
                 var diamondIcon = L.divIcon({{
-                    className: 'hotspot-marker ' + markerClass,
+                    className: 'hotspot-marker',
                     iconSize: [size, size],
                     iconAnchor: [size/2, size/2]
                 }});
@@ -1237,11 +855,8 @@ def render_combined_hotspot_map(
                 marker.bindPopup(`
                     <div style="font-family:sans-serif; padding:4px;">
                         <div style="font-weight:700; font-size:14px; color:#0f172a;">${{hs.name}}</div>
-                        <div style="font-size:12px; color:${{color}}; font-weight:700; margin:2px 0;">Sector: ${{hs.sector}}</div>
-                        <div style="font-size:12px; color:#475569;">Annual CO₂e: <strong>${{hs.emissions_kt ? hs.emissions_kt.toLocaleString() : 'N/A'}} kt</strong></div>
-                        <div style="font-size:10.5px; color:#64748b; margin-top:4px; border-top:1px solid #f1f5f9; padding-top:3px;">
-                            Asset Source: Climate TRACE Facility Registry
-                        </div>
+                        <div style="font-size:12px; color:#7c3aed; font-weight:600; margin:2px 0;">Sector: ${{hs.sector}}</div>
+                        <div style="font-size:12px; color:#475569;">Annual CO₂e: <strong>${{hs.emissions_kt.toLocaleString()}} kt</strong></div>
                     </div>
                 `);
             }});

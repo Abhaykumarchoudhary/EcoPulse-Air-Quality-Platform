@@ -94,6 +94,7 @@ def render_fused_map_view():
         """, unsafe_allow_html=True)
         
         layer_options = [
+            "Original Base Map (Clean)",
             "Fused 1 km Grid (Crisp)",
             "Smooth Continuous Surface",
             "Raw MODIS AOD",
@@ -222,6 +223,7 @@ def render_fused_map_view():
     # Left Map Panel
     with col_map:
         layer_key_map = {
+            "Original Base Map (Clean)": "original",
             "Fused 1 km Grid (Crisp)": "fused",
             "Smooth Continuous Surface": "smooth",
             "Raw MODIS AOD": "aod",
