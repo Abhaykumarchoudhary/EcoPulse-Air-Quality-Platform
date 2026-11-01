@@ -488,6 +488,79 @@ def render_leaflet_fused_map(
                 flex-direction: column;
                 gap: 1.5px;
             }}
+
+            /* Responsive Map Controls on Mobile / Tablet */
+            @media (max-width: 768px) {{
+                .map-hud {{
+                    top: 8px;
+                    left: 8px;
+                    min-width: 170px;
+                    max-width: 220px;
+                    padding: 6px 10px;
+                }}
+                .hud-title {{
+                    font-size: 11px;
+                    max-width: 120px;
+                }}
+                .hud-val {{
+                    font-size: 11px;
+                }}
+                .hud-coords {{
+                    display: none;
+                }}
+                .map-top-bar {{
+                    top: 8px;
+                    right: 8px;
+                    gap: 3px;
+                }}
+                .map-btn-pill {{
+                    font-size: 9.5px;
+                    padding: 3px 6px;
+                }}
+                .landmark-bar {{
+                    top: auto;
+                    bottom: 8px;
+                    left: 8px;
+                    right: 8px;
+                    max-width: calc(100% - 16px);
+                    justify-content: flex-start;
+                    flex-wrap: nowrap;
+                    overflow-x: auto;
+                    -webkit-overflow-scrolling: touch;
+                    scrollbar-width: none;
+                    padding-bottom: 2px;
+                }}
+                .landmark-bar::-webkit-scrollbar {{
+                    display: none;
+                }}
+                .landmark-chip {{
+                    flex-shrink: 0;
+                    white-space: nowrap;
+                    font-size: 9.5px;
+                    padding: 2.5px 6px;
+                }}
+                .map-legend-box {{
+                    bottom: 40px;
+                    left: 8px;
+                    max-width: 200px;
+                    padding: 5px 8px;
+                    font-size: 9.5px;
+                }}
+                .legend-subnote {{
+                    display: none;
+                }}
+            }}
+
+            @media (max-width: 480px) {{
+                .landmark-bar {{
+                    display: none;
+                }}
+                .map-legend-box {{
+                    bottom: 8px;
+                    left: 8px;
+                    max-width: 160px;
+                }}
+            }}
         </style>
     </head>
     <body>
@@ -1000,6 +1073,37 @@ def render_combined_hotspot_map(
                 height: 9px;
                 transform: rotate(45deg);
                 border-radius: 2px;
+            }}
+
+            /* Responsive Hotspot Map Controls */
+            @media (max-width: 768px) {{
+                .hotspot-top-bar {{
+                    top: 8px;
+                    right: 8px;
+                    left: 8px;
+                    justify-content: flex-end;
+                    overflow-x: auto;
+                    flex-wrap: nowrap;
+                    -webkit-overflow-scrolling: touch;
+                    scrollbar-width: none;
+                }}
+                .hotspot-chip {{
+                    flex-shrink: 0;
+                    white-space: nowrap;
+                    font-size: 9.5px;
+                    padding: 3px 6px;
+                }}
+                .hotspot-legend {{
+                    bottom: 8px;
+                    left: 8px;
+                    max-width: calc(100% - 16px);
+                    padding: 5px 8px;
+                    font-size: 9.5px;
+                }}
+                .legend-item {{
+                    font-size: 9px;
+                    margin-right: 6px;
+                }}
             }}
         </style>
     </head>

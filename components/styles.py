@@ -766,5 +766,302 @@ button[kind="secondary"], .btn-outline {
     color: #94a3b8;
     line-height: 1.35;
 }
+
+/* ========================================================================= */
+/* ECOPULSE RESPONSIVE DESIGN & MOBILE BREAKPOINTS                           */
+/* Fluid adaptation across Desktop (>1024px), Tablet (768-1024px), & Mobile (<768px) */
+/* ========================================================================= */
+
+/* General Fluid Adjustments */
+img, svg, iframe, .element-container {
+    max-width: 100% !important;
+}
+
+[data-testid="stPlotlyChart"], .js-plotly-plot, .plot-container {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* TABLET BREAKPOINT (max-width: 1024px) */
+@media (max-width: 1024px) {
+    .block-container,
+    [data-testid="stMainBlockContainer"],
+    .stMainBlockContainer {
+        padding-left: 1.25rem !important;
+        padding-right: 1.25rem !important;
+        padding-top: 0.85rem !important;
+        padding-bottom: 1.5rem !important;
+    }
+
+    .top-header-bar {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 8px !important;
+    }
+
+    .header-badges-row {
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+    }
+
+    /* Metric cards: 2x2 grid on tablet */
+    div[data-testid="stHorizontalBlock"]:has(.metric-card-wrapper) {
+        flex-wrap: wrap !important;
+        gap: 12px !important;
+    }
+    div[data-testid="stHorizontalBlock"]:has(.metric-card-wrapper) > [data-testid="stColumn"],
+    div[data-testid="stHorizontalBlock"]:has(.metric-card-wrapper) > div[data-testid="column"] {
+        min-width: calc(50% - 8px) !important;
+        flex: 1 1 calc(50% - 8px) !important;
+        margin-bottom: 4px !important;
+    }
+
+    .metric-value {
+        font-size: 24px !important;
+    }
+}
+
+/* MOBILE LANDSCAPE & TABLET PORTRAIT (max-width: 860px) */
+@media (max-width: 860px) {
+    /* Stack multi-column layout blocks to single column */
+    div[data-testid="stHorizontalBlock"]:not(:has(.metric-card-wrapper)):not(:has(button[key^="btn_subtab_"])) {
+        flex-wrap: wrap !important;
+        gap: 14px !important;
+    }
+    div[data-testid="stHorizontalBlock"]:not(:has(.metric-card-wrapper)):not(:has(button[key^="btn_subtab_"])) > [data-testid="stColumn"],
+    div[data-testid="stHorizontalBlock"]:not(:has(.metric-card-wrapper)):not(:has(button[key^="btn_subtab_"])) > div[data-testid="column"] {
+        min-width: 100% !important;
+        width: 100% !important;
+        flex: 1 1 100% !important;
+        margin-bottom: 6px !important;
+    }
+
+    /* Air Quality subtabs: wrap 2 per row */
+    div[data-testid="stHorizontalBlock"]:has(button[key^="btn_subtab_"]) {
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+    }
+    div[data-testid="stHorizontalBlock"]:has(button[key^="btn_subtab_"]) > [data-testid="stColumn"],
+    div[data-testid="stHorizontalBlock"]:has(button[key^="btn_subtab_"]) > div[data-testid="column"] {
+        min-width: calc(50% - 4px) !important;
+        flex: 1 1 calc(50% - 4px) !important;
+        margin-bottom: 4px !important;
+    }
+}
+
+/* SMARTPHONE & NARROW SCREENS (max-width: 768px) */
+@media (max-width: 768px) {
+    .block-container,
+    [data-testid="stMainBlockContainer"],
+    .stMainBlockContainer {
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+        padding-top: 0.75rem !important;
+        padding-bottom: 1.25rem !important;
+    }
+
+    /* Sidebar Mobile Overlay */
+    section[data-testid="stSidebar"]:not([data-collapsed="true"]) {
+        min-width: 260px !important;
+        max-width: 86vw !important;
+        width: 86vw !important;
+        box-shadow: 0 0 35px rgba(0, 0, 0, 0.6) !important;
+        z-index: 100000 !important;
+    }
+
+    /* Floating Re-Open Sidebar Control Pill */
+    [data-testid="stExpandSidebarButton"],
+    button[data-testid="stExpandSidebarButton"],
+    [data-testid="stSidebarCollapsedControl"],
+    [data-testid="collapsedControl"],
+    button[data-testid="baseButton-header"][aria-label="Expand sidebar"],
+    button[data-testid="baseButton-header"][aria-label="Open sidebar"],
+    button[aria-label="Expand sidebar"],
+    button[aria-label="Open sidebar"],
+    button[data-testid="stSidebarCollapseButton"][aria-expanded="false"] {
+        top: 8px !important;
+        left: 8px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        padding: 3px 10px 3px 5px !important;
+        font-size: 12px !important;
+    }
+    [data-testid="stExpandSidebarButton"]::before,
+    button[data-testid="stExpandSidebarButton"]::before {
+        width: 24px !important;
+        height: 24px !important;
+    }
+    [data-testid="stExpandSidebarButton"]::after,
+    button[data-testid="stExpandSidebarButton"]::after {
+        font-size: 12px !important;
+        content: "EcoPulse" !important;
+    }
+
+    /* Top Header Bar */
+    .top-header-bar {
+        margin-bottom: 8px !important;
+    }
+    .header-title-box h1 {
+        font-size: 18px !important;
+    }
+    .header-title-box p {
+        font-size: 11.5px !important;
+    }
+    .header-badges-row {
+        gap: 5px !important;
+        padding-top: 0 !important;
+    }
+    .badge-demo,
+    .badge-date,
+    .badge-location,
+    .badge-live {
+        font-size: 10.5px !important;
+        padding: 2.5px 8px !important;
+    }
+
+    /* Content Cards */
+    .content-box-card {
+        padding: 12px 14px !important;
+        border-radius: 8px !important;
+        margin-bottom: 12px !important;
+    }
+    .card-header-row {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 6px !important;
+        margin-bottom: 10px !important;
+    }
+    .card-title-text {
+        font-size: 14.5px !important;
+    }
+    .card-actions-row {
+        width: 100% !important;
+        justify-content: flex-start !important;
+        flex-wrap: wrap !important;
+    }
+
+    /* Stepper: Responsive Vertical Flow on Mobile */
+    .pipeline-flow-container {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 6px !important;
+        padding: 6px 0 !important;
+    }
+    .pipeline-step-card {
+        width: 100% !important;
+        flex: none !important;
+        padding: 10px 12px !important;
+    }
+    .pipeline-step-title {
+        font-size: 13px !important;
+    }
+    .pipeline-step-subtitle {
+        font-size: 11px !important;
+    }
+    .pipeline-arrow {
+        transform: rotate(90deg) !important;
+        margin: 0 auto !important;
+        font-size: 16px !important;
+        line-height: 1 !important;
+    }
+
+    /* Subnav Tabs: Touch Horizontal Scroll */
+    .subnav-tabs-container {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        flex-wrap: nowrap !important;
+        padding-bottom: 6px !important;
+        gap: 8px !important;
+        scrollbar-width: none !important;
+    }
+    .subnav-tabs-container::-webkit-scrollbar {
+        display: none !important;
+    }
+    .subnav-tab-pill {
+        white-space: nowrap !important;
+        font-size: 11.5px !important;
+        padding: 6px 12px !important;
+        flex-shrink: 0 !important;
+    }
+
+    /* Telemetry strip */
+    .live-telemetry-strip {
+        font-size: 11px !important;
+        padding: 8px 10px !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 4px !important;
+    }
+    .live-telemetry-strip .item-chip {
+        font-size: 11px !important;
+    }
+
+    /* Tables & DataFrames */
+    [data-testid="stDataFrame"],
+    [data-testid="stTable"],
+    div.stDataFrame {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        max-width: 100% !important;
+    }
+
+    /* Metric Cards Typography */
+    .metric-card-wrapper {
+        padding: 12px 14px !important;
+    }
+    .metric-value {
+        font-size: 22px !important;
+        margin-bottom: 3px !important;
+    }
+    .metric-label {
+        font-size: 10px !important;
+    }
+    .metric-subtext {
+        font-size: 11px !important;
+    }
+}
+
+/* ULTRA COMPACT PHONES (max-width: 480px) */
+@media (max-width: 480px) {
+    .block-container,
+    [data-testid="stMainBlockContainer"],
+    .stMainBlockContainer {
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+        padding-top: 0.5rem !important;
+    }
+
+    /* Stack metric cards to 1 column on tiny screens */
+    div[data-testid="stHorizontalBlock"]:has(.metric-card-wrapper) > [data-testid="stColumn"],
+    div[data-testid="stHorizontalBlock"]:has(.metric-card-wrapper) > div[data-testid="column"] {
+        min-width: 100% !important;
+        flex: 1 1 100% !important;
+        margin-bottom: 8px !important;
+    }
+
+    /* Air Quality subtabs: single button stack on very small screens */
+    div[data-testid="stHorizontalBlock"]:has(button[key^="btn_subtab_"]) > [data-testid="stColumn"],
+    div[data-testid="stHorizontalBlock"]:has(button[key^="btn_subtab_"]) > div[data-testid="column"] {
+        min-width: 100% !important;
+        flex: 1 1 100% !important;
+    }
+
+    /* Alert Banners */
+    .alert-banner-amber {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 6px !important;
+        font-size: 11.5px !important;
+        padding: 8px 12px !important;
+    }
+
+    /* Footer */
+    .app-footer-row {
+        flex-direction: column !important;
+        gap: 4px !important;
+        text-align: center !important;
+        font-size: 10.5px !important;
+    }
+}
 </style>
 """

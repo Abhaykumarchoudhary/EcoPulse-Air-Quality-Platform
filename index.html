@@ -459,7 +459,141 @@
             50% { opacity: 0.85; }
             100% { transform: translate(var(--dx), var(--dy)) scale(1.05); opacity: 0; }
         }
+
+        /* HUD Toggle Button */
+        .hud-toggle-btn {
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            color: #cbd5e1;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 1px 6px;
+            line-height: 1;
+            border-radius: 4px;
+            transition: all 0.15s ease;
+        }
+        .hud-toggle-btn:hover {
+            background: #0f766e;
+            color: #ffffff;
+            border-color: #14b8a6;
+        }
+
+        /* RESPONSIVE BREAKPOINTS (Mobile & Tablet) */
+        @media (max-width: 860px) {
+            body {
+                overflow-y: auto !important;
+                height: auto !important;
+                min-height: 100vh;
+            }
+            .app-header {
+                flex-wrap: wrap;
+                gap: 8px;
+                padding: 8px 14px;
+            }
+            .brand-title {
+                font-size: 16px;
+            }
+            .brand-subtitle {
+                font-size: 10px;
+            }
+            .header-badges {
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+            .badge {
+                font-size: 10px;
+                padding: 3px 6px;
+            }
+            .btn-github {
+                font-size: 10.5px;
+                padding: 3px 8px;
+            }
+            .app-body {
+                flex-direction: column;
+                overflow: visible;
+                height: auto;
+            }
+            .map-canvas-wrap {
+                width: 100%;
+                height: 56vh;
+                min-height: 380px;
+                flex: none;
+            }
+            .app-sidebar {
+                width: 100%;
+                height: auto;
+                overflow: visible;
+                border-left: none;
+                border-top: 1px solid #334155;
+                padding: 14px;
+            }
+            .map-hud {
+                top: 8px;
+                left: 8px;
+                min-width: 170px;
+                max-width: 230px;
+                padding: 6px 10px;
+            }
+            .hud-title {
+                font-size: 11px;
+            }
+            .hud-coords {
+                display: none;
+            }
+            .hud-val {
+                font-size: 11px;
+            }
+            .landmark-bar {
+                top: auto;
+                bottom: 8px;
+                left: 8px;
+                right: 8px;
+                max-width: calc(100% - 16px);
+                justify-content: flex-start;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                padding-bottom: 2px;
+            }
+            .landmark-bar::-webkit-scrollbar {
+                display: none;
+            }
+            .landmark-chip {
+                flex-shrink: 0;
+                white-space: nowrap;
+                font-size: 10px;
+                padding: 3px 7px;
+            }
+            .legend-box {
+                bottom: 44px;
+                left: 8px;
+                max-width: 220px;
+                padding: 5px 8px;
+                font-size: 9.5px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .brand-subtitle {
+                display: none;
+            }
+            .map-canvas-wrap {
+                height: 52vh;
+                min-height: 320px;
+            }
+            .landmark-bar {
+                display: none;
+            }
+            .legend-box {
+                bottom: 8px;
+                left: 8px;
+                max-width: 160px;
+            }
+        }
     </style>
+
 </head>
 <body>
     <header class="app-header">
@@ -493,7 +627,10 @@
                         <span class="badge-dot"></span>
                         <span class="hud-title" id="hud-title">Delhi-NCR 1 km Surface</span>
                     </div>
-                    <span class="hud-coords" id="hud-coords">28.614°N, 77.209°E</span>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span class="hud-coords" id="hud-coords">28.614°N, 77.209°E</span>
+                        <button id="hud-toggle-btn" class="hud-toggle-btn" onclick="toggleHud()" title="Toggle Details">−</button>
+                    </div>
                 </div>
                 <div class="hud-grid">
                     <div>
@@ -617,6 +754,22 @@
             attributionControl: false
         });
         L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+        setTimeout(function() { map.invalidateSize(); }, 200);
+        window.addEventListener('resize', function() { map.invalidateSize(); });
+
+        function toggleHud() {
+            var hud = document.getElementById('map-hud');
+            var btn = document.getElementById('hud-toggle-btn');
+            var grid = hud.querySelector('.hud-grid');
+            if (grid.style.display === 'none') {
+                grid.style.display = 'grid';
+                btn.innerText = '−';
+            } else {
+                grid.style.display = 'none';
+                btn.innerText = '+';
+            }
+        }
 
         var basemaps = {
             'positron': L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 20, detectRetina: true }),
