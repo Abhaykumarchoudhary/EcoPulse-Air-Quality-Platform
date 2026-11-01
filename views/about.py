@@ -4,6 +4,7 @@ Features 'How EcoPulse works' 4-step pipeline, Data sources table,
 Limitations list, Team credits (Abhay Kumar Choudhary and team),
 and Action buttons (GitHub repository, Download report).
 """
+import os
 import streamlit as st
 
 def render_about_page():
@@ -102,19 +103,48 @@ def render_about_page():
         )
         st.markdown(limits_html, unsafe_allow_html=True)
 
-    # Bottom Row: Team Credits & Action Buttons (Wireframe 5 Bottom)
-    footer_html = (
-        '<div class="content-box-card" style="padding: 16px 24px; margin-top: 4px; display: flex; justify-content: space-between; align-items: center;">'
-        '<div>'
-        '<div style="font-size: 13px; color: #1e293b; margin-bottom: 3px;">'
-        '<strong>Team</strong> · Abhay Kumar Choudhary and team'
-        '</div>'
-        '<div style="font-size: 13px; color: #64748b;">'
-        '<strong>Guide</strong> · [Guide name]'
-        '</div></div>'
-        '<div style="display: flex; gap: 12px; align-items: center;">'
-        '<a href="https://github.com" target="_blank" style="background:#0f766e; color:#ffffff; padding:8px 18px; border-radius:6px; font-size:13px; font-weight:600; text-decoration:none;">GitHub repository</a>'
-        '<a href="#" style="background:#ffffff; border:1px solid #0f766e; color:#0f766e; padding:8px 18px; border-radius:6px; font-size:13px; font-weight:600; text-decoration:none;">Download report</a>'
-        '</div></div>'
-    )
-    st.markdown(footer_html, unsafe_allow_html=True)
+    # Read Technical Report files for direct download
+    report_html_path = os.path.join("docs", "ECOPULSE_TECHNICAL_REPORT.html")
+    report_md_path = os.path.join("docs", "ECOPULSE_TECHNICAL_REPORT.md")
+    
+    report_html_data = ""
+    if os.path.exists(report_html_path):
+        with open(report_html_path, "r", encoding="utf-8") as f:
+            report_html_data = f.read()
+
+    report_md_data = ""
+    if os.path.exists(report_md_path):
+        with open(report_md_path, "r", encoding="utf-8") as f:
+            report_md_data = f.read()
+
+    # Bottom Row: Team Credits & Action Buttons
+    with st.container(border=True):
+        c_team, c_actions = st.columns([52, 48])
+        with c_team:
+            st.markdown("""
+            <div style="font-size: 13.5px; color: #1e293b; margin-bottom: 4px;">
+                <strong>Engineering Team:</strong> Abhay Kumar Choudhary &amp; Research Team
+            </div>
+            <div style="font-size: 12px; color: #64748b;">
+                <strong>Capstone Project:</strong> Satellite-Fused Air Quality &amp; Carbon Intelligence · Delhi-NCR
+            </div>
+            """, unsafe_allow_html=True)
+            
+        with c_actions:
+            col_b1, col_b2 = st.columns(2)
+            with col_b1:
+                st.link_button(
+                    "★ GitHub Repo",
+                    url="https://github.com/Abhaykumarchoudhary/EcoPulse-Air-Quality-Platform",
+                    use_container_width=True
+                )
+            with col_b2:
+                st.download_button(
+                    label="📥 Technical Report",
+                    data=report_html_data or report_md_data,
+                    file_name="EcoPulse_Technical_Report_v2.1.html",
+                    mime="text/html",
+                    use_container_width=True,
+                    help="Download complete technical documentation, mathematical formulation, and model validation benchmarks."
+                )
+

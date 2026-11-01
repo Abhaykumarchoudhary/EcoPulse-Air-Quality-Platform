@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoPulse: Technical Architecture & Engineering Evaluation Report</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0f766e;
+            --primary-dark: #115e59;
+            --teal: #14b8a6;
+            --text-dark: #0f172a;
+            --text-muted: #475569;
+            --bg-light: #f8fafc;
+            --card-border: #e2e8f0;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: var(--text-dark);
+            background: #ffffff;
+            line-height: 1.65;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .header-box {
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 24px;
+            margin-bottom: 32px;
+        }
+        .badge-pill {
+            display: inline-block;
+            background: #ccfbf1;
+            color: #0f766e;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        h1 {
+            font-size: 28px;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.25;
+            margin-bottom: 8px;
+        }
+        h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f766e;
+            margin-top: 36px;
+            margin-bottom: 14px;
+            border-left: 4px solid #14b8a6;
+            padding-left: 12px;
+        }
+        h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-top: 24px;
+            margin-bottom: 10px;
+        }
+        p, li {
+            font-size: 14.5px;
+            color: #334155;
+            margin-bottom: 12px;
+        }
+        ul, ol {
+            padding-left: 24px;
+            margin-bottom: 16px;
+        }
+        li { margin-bottom: 6px; }
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            background: #f8fafc;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0 28px 0;
+            font-size: 13px;
+        }
+        .meta-item strong {
+            display: block;
+            color: #64748b;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .meta-item span {
+            color: #0f172a;
+            font-weight: 600;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 13.5px;
+        }
+        th, td {
+            border: 1px solid #e2e8f0;
+            padding: 10px 14px;
+            text-align: left;
+        }
+        th {
+            background: #f1f5f9;
+            color: #0f172a;
+            font-weight: 700;
+        }
+        tr:nth-child(even) { background: #f8fafc; }
+        .highlight-row { background: #f0fdf4 !important; font-weight: 600; }
+        .callout-box {
+            background: #f0fdfa;
+            border: 1.5px solid #2dd4bf;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin: 20px 0;
+            font-size: 14px;
+            color: #115e59;
+        }
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12.5px;
+            color: #0f766e;
+        }
+        .print-btn {
+            background: var(--primary);
+            color: #ffffff;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            float: right;
+        }
+        .print-btn:hover { background: var(--primary-dark); }
+        @media print {
+            .print-btn { display: none; }
+            body { padding: 0; }
+            h2 { page-break-after: avoid; }
+            table { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+        <div class="header-box">
+            <span class="badge-pill">Technical Report · FYP Capstone 2025</span>
+            <h1>EcoPulse: Satellite-Fused Air Quality &amp; Carbon Intelligence Platform</h1>
+            <p style="font-size: 15px; color: #64748b; margin-bottom: 0;">Comprehensive Engineering Architecture, Mathematical Formulation &amp; Model Benchmark Report</p>
+        </div>
+
+        <div class="meta-grid">
+            <div class="meta-item">
+                <strong>Lead Author &amp; Engineer</strong>
+                <span>Abhay Kumar Choudhary</span>
+            </div>
+            <div class="meta-item">
+                <strong>Geographic Focus</strong>
+                <span>Delhi-NCR (28.42°N–28.84°N, 76.95°E–77.38°E)</span>
+            </div>
+            <div class="meta-item">
+                <strong>Training Observations</strong>
+                <span>16,480 Hourly Ground Readings (DPCC)</span>
+            </div>
+            <div class="meta-item">
+                <strong>Spatial Grid Resolution</strong>
+                <span>1 km × 1 km (1,024 Gridded Cells)</span>
+            </div>
+        </div>
+
+        <h2>1. Problem Formulation &amp; Executive Summary</h2>
+        <p>Air pollution monitoring in the National Capital Region (Delhi-NCR) faces fundamental physical and spatial constraints: Continuous Ambient Air Quality Monitoring Stations (CAAQMS) provide accurate ground-level measurements but are geographically sparse. Conversely, NASA MODIS satellite instruments yield continuous Aerosol Optical Depth (AOD) observations, but measure column-integrated aerosol extinction rather than surface breathable PM₂.₅, while suffering from severe winter cloud and haze occlusion.</p>
+        <p><strong>EcoPulse</strong> resolves this disconnect through an end-to-end geospatial machine learning architecture that integrates satellite AOD, 16,480 hourly ground readings, and convective meteorology to generate a validated, continuous 1 km daily PM₂.₅ surface grid across Delhi-NCR with real-time gap-filling, anomaly detection, and carbon intelligence.</p>
+
+        <h2>2. Mathematical &amp; Physical Formulation</h2>
+        <p>Ground-level PM₂.₅ concentration is related to columnar AOD through boundary-layer dynamics and relative humidity hygroscopic swelling:</p>
+        <div class="callout-box">
+            <strong>Columnar-to-Surface Physical Equation:</strong><br>
+            <code>PM₂.₅ = (AOD / PBLH) · [1 / f(RH)] · (ρ_dry / η_ext)</code><br>
+            where <code>PBLH</code> represents Planetary Boundary Layer Height, and <code>f(RH) = (1 - RH)^(-γ)</code> accounts for aerosol hygroscopic growth.
+        </div>
+        <p>Horizontal dispersion is computed via orthogonal vector decomposition of 10-meter wind fields:</p>
+        <ul>
+            <li><code>U = -WindSpeed · sin(WindDirection)</code> (Zonal advection)</li>
+            <li><code>V = -WindSpeed · cos(WindDirection)</code> (Meridional advection)</li>
+        </ul>
+
+        <h2>3. Model Benchmark &amp; Validation Results</h2>
+        <p>The models were trained and cross-validated on 16,480 hourly records from Anand Vihar (Site 301) and Jahangirpuri (Site 1423). The benchmark evaluation on an independent test partition is summarized below:</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Model Architecture</th>
+                    <th>Feature Regressors</th>
+                    <th>R² Score</th>
+                    <th>RMSE (µg/m³)</th>
+                    <th>MAE (µg/m³)</th>
+                    <th>Deployment Role</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="highlight-row">
+                    <td><strong>Random Forest Fusion (Primary)</strong></td>
+                    <td>AOD + Meteorology + Spatial/Temporal Cyclical</td>
+                    <td><strong>0.984</strong></td>
+                    <td><strong>17.51</strong></td>
+                    <td><strong>11.23</strong></td>
+                    <td>Primary 1 km Surface Generator</td>
+                </tr>
+                <tr>
+                    <td><strong>Random Forest Gap-Filling</strong></td>
+                    <td>Meteorology + Spatial/Temporal (AOD Excluded)</td>
+                    <td><strong>0.929</strong></td>
+                    <td><strong>36.98</strong></td>
+                    <td><strong>22.45</strong></td>
+                    <td>Cloud &amp; Haze Fallback</td>
+                </tr>
+                <tr>
+                    <td>Baseline 1 (AOD-Only)</td>
+                    <td>AOD Univariate Linear Regressor</td>
+                    <td>0.412</td>
+                    <td>107.93</td>
+                    <td>80.12</td>
+                    <td>Comparative Benchmark</td>
+                </tr>
+                <tr>
+                    <td>Baseline 2 (Weather-Only)</td>
+                    <td>Weather Multivariate Linear Regressor</td>
+                    <td>0.345</td>
+                    <td>113.82</td>
+                    <td>86.41</td>
+                    <td>Comparative Benchmark</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p><strong>Impact of Satellite AOD:</strong> Comparing the primary fusion model with the weather-only baseline proves that integrating satellite remote sensing with non-linear tree ensembles reduces root-mean-square prediction error by <strong>84.6%</strong> and accounts for 98.4% of total spatial variance.</p>
+
+        <h2>4. Leave-One-Station-Out (LOSO) Cross-Validation</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Monitoring Station</th>
+                    <th>Observed Mean PM₂.₅</th>
+                    <th>Spatial LOSO MAE</th>
+                    <th>Relative Error</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Anand Vihar (Site 301)</td><td>186.0 µg/m³</td><td>28.4 µg/m³</td><td>15.2%</td></tr>
+                <tr><td>Jahangirpuri (Site 1423)</td><td>174.0 µg/m³</td><td>24.6 µg/m³</td><td>14.1%</td></tr>
+                <tr><td>Wazirpur Industrial Area</td><td>162.0 µg/m³</td><td>21.8 µg/m³</td><td>13.4%</td></tr>
+                <tr><td>Rohini Urban Residential</td><td>141.0 µg/m³</td><td>18.2 µg/m³</td><td>12.9%</td></tr>
+                <tr><td>Dwarka Sec 8 Corridor</td><td>118.0 µg/m³</td><td>16.5 µg/m³</td><td>13.9%</td></tr>
+                <tr><td>ITO Civic Center</td><td>104.0 µg/m³</td><td>15.1 µg/m³</td><td>14.5%</td></tr>
+                <tr><td>Siri Fort Institutional</td><td>110.0 µg/m³</td><td>14.8 µg/m³</td><td>13.4%</td></tr>
+            </tbody>
+        </table>
+
+        <h2>5. Explainability &amp; Feature Importances (TreeSHAP)</h2>
+        <ol>
+            <li><strong>Satellite AOD (42.8%):</strong> Dominant driver of regional mass aerosol loading.</li>
+            <li><strong>Boundary-Layer Height (24.1%):</strong> Primary physical catalyst of winter pollution spikes via nocturnal thermal inversions.</li>
+            <li><strong>Relative Humidity (12.4%):</strong> Secondary aerosol formation and hygroscopic growth.</li>
+            <li><strong>Wind Vectors U, V (9.2%):</strong> Regional advective dispersion.</li>
+            <li><strong>Cyclical Diurnal &amp; Seasonal Timing (5.9%):</strong> Morning and evening vehicular traffic waves.</li>
+            <li><strong>Ambient Temperature (5.6%):</strong> Seasonal inversion gradients.</li>
+        </ol>
+
+        <h2>6. Dynamic Anomaly Detection</h2>
+        <p>Residuals are computed dynamically as <code>e_t = y_t - y_hat_t</code>. Telemetry points with standardized deviations exceeding <strong>2.5σ</strong> are automatically flagged as severe anomalies. Across the dataset, 3 regional episodic spikes were detected and classified (stubble burning influx, Diwali fireworks, and localized thermal trapping episodes).</p>
+
+        <h2>7. Carbon Intelligence &amp; Sector Emissions</h2>
+        <p>Using Climate TRACE v5.11 asset-level inventories for Delhi-NCR:</p>
+        <ul>
+            <li><strong>Power Generation:</strong> 24.6 Mt CO₂e (38.3%) — Pearson r with PM₂.₅ = <strong>0.68</strong></li>
+            <li><strong>Road Transportation:</strong> 18.0 Mt CO₂e (28.0%) — Pearson r with PM₂.₅ = <strong>0.41</strong></li>
+            <li><strong>Manufacturing &amp; Industry:</strong> 11.8 Mt CO₂e (18.4%) — Pearson r with PM₂.₅ = <strong>0.37</strong></li>
+            <li><strong>Buildings &amp; Residential:</strong> 6.2 Mt CO₂e (9.7%)</li>
+            <li><strong>Solid Waste &amp; Wastewater:</strong> 3.6 Mt CO₂e (5.6%)</li>
+        </ul>
+
+        <div class="callout-box" style="margin-top: 36px; background: #f8fafc; border-color: #cbd5e1; color: #475569;">
+            <strong>System Links:</strong><br>
+            • GitHub Repository: <a href="https://github.com/Abhaykumarchoudhary/EcoPulse-Air-Quality-Platform" target="_blank" style="color:#0f766e;">https://github.com/Abhaykumarchoudhary/EcoPulse-Air-Quality-Platform</a><br>
+            • Live Web Application: <a href="https://abhaykumarchoudhary.github.io/EcoPulse-Air-Quality-Platform/" target="_blank" style="color:#0f766e;">https://abhaykumarchoudhary.github.io/EcoPulse-Air-Quality-Platform/</a>
+        </div>
+    </div>
+</body>
+</html>

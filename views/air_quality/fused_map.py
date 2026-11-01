@@ -34,6 +34,28 @@ def render_fused_map_view():
         sorted_st = sorted(stations, key=lambda s: s["pm25"], reverse=True)
         top_stations = sorted_st[:6]
     
+    # Build real CSV export data from 1,024 active grid cells
+    import pandas as pd
+    export_rows = []
+    for c in active_grid:
+        export_rows.append({
+            "cell_id": c.get("cell_id"),
+            "latitude": c.get("center_lat"),
+            "longitude": c.get("center_lon"),
+            "pm25_ug_m3": c.get("pm25"),
+            "satellite_aod": c.get("aod"),
+            "uncertainty_sigma_ug_m3": c.get("sigma"),
+            "category": c.get("category"),
+            "is_gap_filled": c.get("is_gap_filled", False),
+            "nearest_monitoring_station": c.get("nearest_station"),
+            "lat_min": c.get("lat_min"),
+            "lat_max": c.get("lat_max"),
+            "lon_min": c.get("lon_min"),
+            "lon_max": c.get("lon_max")
+        })
+    export_df = pd.DataFrame(export_rows)
+    export_csv_bytes = export_df.to_csv(index=False).encode('utf-8')
+
     col_map, col_controls = st.columns([72, 28])
     
     # Session state initialization for map view
@@ -145,6 +167,26 @@ def render_fused_map_view():
                     st.session_state["selected_station"] = st_item["name"]
                     st.rerun()
 
+        # Data Export Card in Sidebar
+        cur_date_str = AVAILABLE_DATES[st.session_state["timeline_date_idx"]]
+        cur_date_slug = cur_date_str.lower().replace(" ", "_").replace("(", "").replace(")", "")
+        st.markdown("""
+        <div class="content-box-card" style="padding: 16px; margin-top: 14px; margin-bottom: 8px;">
+            <div style="font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 6px;">Export Surface Data</div>
+            <p style="font-size: 11.5px; color: #64748b; line-height: 1.45; margin-bottom: 10px;">
+                Export all 1,024 1 km grid cells with machine learning PM₂.₅ estimates, satellite AOD, and uncertainty (±σ).
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        st.download_button(
+            label="📥 Download 1 km Grid (CSV)",
+            data=export_csv_bytes,
+            file_name=f"ecopulse_delhi_1km_grid_{cur_date_slug}.csv",
+            mime="text/csv",
+            use_container_width=True,
+            key="btn_export_grid_csv_sidebar"
+        )
+
     # Left Map Panel
     with col_map:
         layer_key_map = {
@@ -186,7 +228,7 @@ def render_fused_map_view():
     </div>
     """, unsafe_allow_html=True)
     
-    t_play, t_slider, t_date, t_speed, t_dl = st.columns([6, 56, 16, 10, 12])
+    t_play, t_slider, t_date, t_speed, t_dl = st.columns([6, 52, 14, 10, 18])
     
     with t_play:
         play_label = "⏸" if st.session_state["timeline_playing"] else "▶"
@@ -206,7 +248,6 @@ def render_fused_map_view():
         st.session_state["timeline_date_idx"] = selected_idx
         
     with t_date:
-        cur_date_str = AVAILABLE_DATES[st.session_state["timeline_date_idx"]]
         st.markdown(f"""
         <div style="background:#ffffff; border:1px solid #cbd5e1; border-radius:6px; padding:6px 10px; font-size:12px; font-weight:600; text-align:center; color:#0f172a;">
             {cur_date_str}
@@ -218,9 +259,10 @@ def render_fused_map_view():
         
     with t_dl:
         st.download_button(
-            label="Download PNG",
-            data="EcoPulse PM2.5 Surface Snapshot",
-            file_name="ecopulse_delhi_pm25.png",
-            mime="image/png",
-            key="btn_dl_png"
+            label="📥 Export CSV",
+            data=export_csv_bytes,
+            file_name=f"ecopulse_delhi_1km_grid_{cur_date_slug}.csv",
+            mime="text/csv",
+            key="btn_dl_csv_timeline",
+            help="Download all 1,024 1 km cells as CSV"
         )
