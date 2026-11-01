@@ -1,0 +1,98 @@
+[
+  {
+    "date_str": "21 Oct",
+    "full_date": "2025-10-21",
+    "observed": 700,
+    "expected": 492,
+    "sigma": 14.2,
+    "is_severe": true,
+    "flagged_stations": [
+      "Jahangirpuri"
+    ],
+    "reason": "Severe meteorological inversion + localized surface emission spike"
+  },
+  {
+    "date_str": "14 Dec",
+    "full_date": "2025-12-14",
+    "observed": 617,
+    "expected": 419,
+    "sigma": 13.5,
+    "is_severe": true,
+    "flagged_stations": [
+      "Anand Vihar"
+    ],
+    "reason": "Severe meteorological inversion + localized surface emission spike"
+  },
+  {
+    "date_str": "23 Nov",
+    "full_date": "2025-11-23",
+    "observed": 585,
+    "expected": 388,
+    "sigma": 13.5,
+    "is_severe": true,
+    "flagged_stations": [
+      "Anand Vihar"
+    ],
+    "reason": "Severe meteorological inversion + localized surface emission spike"
+  },
+  {
+    "date_str": "13 Dec",
+    "full_date": "2025-12-13",
+    "observed": 467,
+    "expected": 326,
+    "sigma": 9.6,
+    "is_severe": true,
+    "flagged_stations": [
+      "Anand Vihar"
+    ],
+    "reason": "Severe meteorological inversion + localized surface emission spike"
+  },
+  {
+    "date_str": "29 Jan",
+    "full_date": "2025-01-29",
+    "observed": 441,
+    "expected": 313,
+    "sigma": 8.7,
+    "is_severe": true,
+    "flagged_stations": [
+      "Anand Vihar"
+    ],
+    "reason": "Severe meteorological inversion + localized surface emission spike"
+  },
+  {
+    "date_str": "19 Jan",
+    "full_date": "2025-01-19",
+    "observed": 385,
+    "expected": 266,
+    "sigma": 8.1,
+    "is_severe": true,
+    "flagged_stations": [
+      "Anand Vihar"
+    ],
+    "reason": "Severe meteorological inversion + localized surface emission spike"
+  },
+  {
+    "date_str": "27 Nov",
+    "full_date": "2025-11-27",
+    "observed": 480,
+    "expected": 368,
+    "sigma": 7.6,
+    "is_severe": true,
+    "flagged_stations": [
+      "Anand Vihar"
+    ],
+    "reason": "Severe meteorological inversion + localized surface emission spike"
+  },
+  {
+    "date_str": "19 Nov",
+    "full_date": "2025-11-19",
+    "observed": 527,
+    "expected": 420,
+    "sigma": 7.3,
+    "is_severe": true,
+    "flagged_stations": [
+      "Anand Vihar"
+    ],
+    "reason": "Severe meteorological inversion + localized surface emission spike"
+  }
+]

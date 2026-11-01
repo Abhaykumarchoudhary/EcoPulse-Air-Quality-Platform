@@ -1,0 +1,139 @@
+{
+  "model_comparison": [
+    {
+      "name": "Weather-only",
+      "r2": 0.4,
+      "rmse": 87.2,
+      "mae": 62.0,
+      "is_best": false
+    },
+    {
+      "name": "AOD-only linear",
+      "r2": 0.73,
+      "rmse": 58.3,
+      "mae": 39.6,
+      "is_best": false
+    },
+    {
+      "name": "RF/XGBoost fusion",
+      "r2": 0.98,
+      "rmse": 14.6,
+      "mae": 7.7,
+      "is_best": true
+    }
+  ],
+  "loso_errors": [
+    {
+      "station": "Anand Vihar",
+      "mae": 8.7,
+      "is_worst": false,
+      "color": "#0f766e"
+    },
+    {
+      "station": "Jahangirpuri",
+      "mae": 9.6,
+      "is_worst": true,
+      "color": "#f59e0b"
+    },
+    {
+      "station": "Wazirpur",
+      "mae": 24.1,
+      "is_worst": false,
+      "color": "#0f766e"
+    },
+    {
+      "station": "Rohini",
+      "mae": 22.5,
+      "is_worst": false,
+      "color": "#0f766e"
+    },
+    {
+      "station": "Punjabi Bagh",
+      "mae": 21.0,
+      "is_worst": false,
+      "color": "#0f766e"
+    },
+    {
+      "station": "Dwarka Sec 8",
+      "mae": 19.8,
+      "is_worst": false,
+      "color": "#0f766e"
+    },
+    {
+      "station": "ITO",
+      "mae": 18.2,
+      "is_worst": false,
+      "color": "#0f766e"
+    }
+  ],
+  "shap_importance": [
+    {
+      "feature": "AOD",
+      "importance": 0.77,
+      "color": "#0f766e",
+      "description": "AOD (Satellite Aerosol Optical Depth)"
+    },
+    {
+      "feature": "BLH",
+      "importance": 0.16,
+      "color": "#64748b",
+      "description": "BLH (Boundary-layer mixing height)"
+    },
+    {
+      "feature": "Solar_radiation",
+      "importance": 0.03,
+      "color": "#64748b",
+      "description": "Solar Radiation"
+    },
+    {
+      "feature": "Temperature",
+      "importance": 0.02,
+      "color": "#64748b",
+      "description": "Temperature (Inversion gradient)"
+    },
+    {
+      "feature": "Humidity",
+      "importance": 0.0,
+      "color": "#64748b",
+      "description": "RH (Relative humidity / Hygroscopic growth)"
+    }
+  ],
+  "n_samples": 16480,
+  "feature_names": [
+    "aod",
+    "blh",
+    "wind_speed",
+    "temperature",
+    "humidity",
+    "pressure",
+    "solar_radiation",
+    "wind_u",
+    "wind_v",
+    "sin_hour",
+    "cos_hour",
+    "sin_month",
+    "cos_month",
+    "latitude",
+    "longitude",
+    "is_winter"
+  ],
+  "gapfill_feature_names": [
+    "blh",
+    "wind_speed",
+    "temperature",
+    "humidity",
+    "pressure",
+    "solar_radiation",
+    "wind_u",
+    "wind_v",
+    "sin_hour",
+    "cos_hour",
+    "sin_month",
+    "cos_month",
+    "latitude",
+    "longitude",
+    "is_winter"
+  ],
+  "residual_mean": -0.51,
+  "residual_std": 14.64
+}

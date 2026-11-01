@@ -1,10 +1,14 @@
 """
-Anomaly detection records based on residual deviation thresholds (|residual| > 2σ / 3σ).
-Directly matches Wireframe 2b specifications.
+Anomaly detection records based on residual deviation thresholds (|residual| > 2.5σ / 3σ).
+Dynamically loaded from `models/anomaly_records.json` computed by `train_model.py`.
 """
+import os
+import json
 from typing import List, Dict, Any
 
-ANOMALY_DAYS: List[Dict[str, Any]] = [
+ANOMALIES_FILE = os.path.join("models", "anomaly_records.json")
+
+DEFAULT_ANOMALY_DAYS: List[Dict[str, Any]] = [
     {
         "date_str": "11 Jan",
         "full_date": "2025-01-11",
@@ -44,51 +48,22 @@ ANOMALY_DAYS: List[Dict[str, Any]] = [
         "is_severe": True,
         "flagged_stations": ["All Delhi-NCR"],
         "reason": "Severe meteorological stagnation across Indo-Gangetic Plain"
-    },
-    {
-        "date_str": "21 Dec",
-        "full_date": "2024-12-21",
-        "observed": 199,
-        "expected": 151,
-        "sigma": 2.4,
-        "is_severe": False,
-        "flagged_stations": ["Anand Vihar", "ITO", "Patparganj"],
-        "reason": "Pre-holiday vehicular emissions surge"
-    },
-    {
-        "date_str": "15 Dec",
-        "full_date": "2024-12-15",
-        "observed": 162,
-        "expected": 121,
-        "sigma": 2.2,
-        "is_severe": False,
-        "flagged_stations": ["Dwarka", "Punjabi Bagh"],
-        "reason": "Boundary layer height dropped below 300m"
-    },
-    {
-        "date_str": "09 Dec",
-        "full_date": "2024-12-09",
-        "observed": 230,
-        "expected": 159,
-        "sigma": 3.5,
-        "is_severe": True,
-        "flagged_stations": ["Anand Vihar", "Jahangirpuri"],
-        "reason": "Severe dust transport and temperature inversion"
-    },
-    {
-        "date_str": "02 Dec",
-        "full_date": "2024-12-02",
-        "observed": 171,
-        "expected": 133,
-        "sigma": 2.1,
-        "is_severe": False,
-        "flagged_stations": ["Wazirpur", "Shadipur"],
-        "reason": "Early morning spike exceeding 2σ residual"
     }
 ]
 
+def load_anomalies() -> List[Dict[str, Any]]:
+    if os.path.exists(ANOMALIES_FILE):
+        try:
+            with open(ANOMALIES_FILE, "r", encoding="utf-8") as f:
+                records = json.load(f)
+                if records and len(records) > 0:
+                    return records
+        except Exception:
+            pass
+    return DEFAULT_ANOMALY_DAYS
+
+ANOMALY_DAYS = load_anomalies()
+
 def get_anomaly_count_month() -> int:
-    """Number of anomaly days with sigma >= 3.0 in the current month (Jan 2025)."""
-    # 11 Jan (3.4), 06 Jan (3.1), 02 Jan (2.6 - sub-3) -> 2 or 3 depending on filter
-    # Matches wireframe metric: "3"
-    return 3
+    """Number of anomaly days with sigma >= 3.0."""
+    return sum(1 for a in ANOMALY_DAYS if a.get("is_severe", False) or a.get("sigma", 0) >= 3.0)
