@@ -3,7 +3,7 @@ Interactive Leaflet-based Geospatial Map Component for EcoPulse.
 High-resolution 1 km PM2.5 gridded surface with Retina basemaps,
 smooth contour heat surface, animated wind flow streamlines, floating inspection HUD,
 numeric station pins with dual radar pulses, quick landmark fly-to controls,
-fullscreen toggle, and facility emission hotspot overlays.
+and facility emission hotspot overlays.
 """
 import json
 from typing import List, Dict, Any, Optional
@@ -27,7 +27,7 @@ def render_leaflet_fused_map(
     show_anomalies: bool = True,
     opacity: float = 0.75,
     basemap_theme: str = "positron",     # "positron", "dark_matter", "satellite_hybrid", "topographic", "streets"
-    selected_station_name: Optional[str] = "Anand Vihar",
+    selected_station_name: Optional[str] = None,
     height: int = 560,
     is_overview: bool = False,
     stations: Optional[List[Dict[str, Any]]] = None,
@@ -36,7 +36,7 @@ def render_leaflet_fused_map(
 ):
     """
     Renders ultra-high quality Leaflet map with Retina basemaps, discrete 1km / smooth heat modes,
-    live animated wind flow streamlines, collapsible glassmorphic HUD, full-screen toggle,
+    live animated wind flow streamlines, collapsible glassmorphic HUD,
     quick landmark navigation, and CPCB station pins with pulsing radar rings.
     """
     grid_json = _safe_json_dumps(grid_cells)
@@ -94,26 +94,16 @@ def render_leaflet_fused_map(
                 height: {height}px;
                 border-radius: 12px;
                 overflow: hidden;
-                box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.25), 0 8px 10px -6px rgba(15, 23, 42, 0.15);
+                box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.20), 0 8px 10px -6px rgba(15, 23, 42, 0.10);
                 border: 1px solid #cbd5e1;
-            }}
-            #map-wrapper.fullscreen {{
-                position: fixed !important;
-                top: 0 !important;
-                left: 0 !important;
-                width: 100vw !important;
-                height: 100vh !important;
-                z-index: 999999 !important;
-                border-radius: 0 !important;
-                border: none !important;
             }}
             #map {{ width: 100%; height: 100%; background: #0f172a; }}
             
             /* Glassmorphic Floating HUD (Inspection Card) */
             .map-hud {{
                 position: absolute;
-                top: 14px;
-                left: 14px;
+                top: 12px;
+                left: 12px;
                 z-index: 1000;
                 background: rgba(15, 23, 42, 0.90);
                 backdrop-filter: blur(14px);
@@ -122,10 +112,10 @@ def render_leaflet_fused_map(
                 border-radius: 10px;
                 padding: {'8px 12px' if is_overview else '10px 14px'};
                 color: #ffffff;
-                min-width: {'220px' if is_overview else '270px'};
-                max-width: 320px;
-                box-shadow: 0 16px 36px rgba(0,0,0,0.4);
-                transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+                min-width: {'210px' if is_overview else '260px'};
+                max-width: 300px;
+                box-shadow: 0 16px 36px rgba(0,0,0,0.35);
+                transition: transform 0.25s ease, opacity 0.2s ease;
                 pointer-events: auto;
             }}
             .map-hud.collapsed .hud-body {{
@@ -136,8 +126,8 @@ def render_leaflet_fused_map(
                 align-items: center;
                 justify-content: space-between;
                 border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-                padding-bottom: 6px;
-                margin-bottom: 6px;
+                padding-bottom: 5px;
+                margin-bottom: 5px;
             }}
             .hud-title-box {{
                 display: flex;
@@ -170,7 +160,7 @@ def render_leaflet_fused_map(
             .hud-actions {{
                 display: flex;
                 align-items: center;
-                gap: 4px;
+                gap: 5px;
             }}
             .hud-btn-toggle {{
                 background: transparent;
@@ -188,14 +178,14 @@ def render_leaflet_fused_map(
                 background: rgba(255, 255, 255, 0.1);
             }}
             .hud-coords {{
-                font-size: 10px;
+                font-size: 9.5px;
                 color: #94a3b8;
                 font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
             }}
             .hud-grid {{
                 display: grid;
                 grid-template-columns: 1fr 1fr;
-                gap: 6px 12px;
+                gap: 5px 10px;
             }}
             .hud-item {{
                 display: flex;
@@ -205,32 +195,32 @@ def render_leaflet_fused_map(
                 font-size: 9px;
                 font-weight: 600;
                 color: #94a3b8;
-                letter-spacing: 0.4px;
+                letter-spacing: 0.3px;
                 text-transform: uppercase;
             }}
             .hud-val {{
-                font-size: 12.5px;
+                font-size: 12px;
                 font-weight: 700;
                 color: #f1f5f9;
             }}
             .hud-val-tag {{
                 display: inline-block;
-                padding: 2px 7px;
+                padding: 1.5px 6px;
                 border-radius: 4px;
-                font-size: 11px;
+                font-size: 10.5px;
                 font-weight: 700;
-                margin-top: 2px;
+                margin-top: 1px;
             }}
 
             /* Quick Action Toolbar Top Right */
             .map-top-bar {{
                 position: absolute;
-                top: 14px;
-                right: 14px;
+                top: 12px;
+                right: 12px;
                 z-index: 1000;
-                display: flex;
+                display: {'none' if is_overview else 'flex'};
                 align-items: center;
-                gap: 6px;
+                gap: 5px;
                 flex-wrap: wrap;
                 justify-content: flex-end;
             }}
@@ -238,13 +228,13 @@ def render_leaflet_fused_map(
                 background: rgba(255, 255, 255, 0.94);
                 backdrop-filter: blur(8px);
                 border: 1px solid #cbd5e1;
-                border-radius: 7px;
-                padding: 5px 9px;
-                font-size: 11px;
+                border-radius: 6px;
+                padding: 4px 8px;
+                font-size: 10.5px;
                 font-weight: 600;
                 color: #1e293b;
                 cursor: pointer;
-                box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+                box-shadow: 0 2px 6px rgba(0,0,0,0.1);
                 transition: all 0.15s ease;
                 display: inline-flex;
                 align-items: center;
@@ -255,12 +245,6 @@ def render_leaflet_fused_map(
                 color: #ffffff;
                 border-color: #0f766e;
                 transform: translateY(-1px);
-                box-shadow: 0 4px 12px rgba(15, 118, 110, 0.25);
-            }}
-            .map-btn-pill.active {{
-                background: #0f766e;
-                color: #ffffff;
-                border-color: #0f766e;
             }}
 
             /* Dropdown Basemap Menu inside Map */
@@ -278,7 +262,7 @@ def render_leaflet_fused_map(
                 border: 1px solid #cbd5e1;
                 border-radius: 8px;
                 padding: 4px;
-                min-width: 160px;
+                min-width: 150px;
                 box-shadow: 0 10px 25px rgba(0,0,0,0.15);
                 display: none;
                 flex-direction: column;
@@ -289,46 +273,37 @@ def render_leaflet_fused_map(
                 display: flex;
             }}
             .basemap-opt {{
-                padding: 6px 10px;
-                font-size: 11.5px;
+                padding: 5px 8px;
+                font-size: 11px;
                 font-weight: 600;
                 color: #1e293b;
                 border-radius: 5px;
                 cursor: pointer;
-                transition: background 0.15s ease;
-                display: flex;
-                align-items: center;
-                gap: 6px;
             }}
             .basemap-opt:hover {{
                 background: #f1f5f9;
                 color: #0f766e;
             }}
-            .basemap-opt.active {{
-                background: #ccfbf1;
-                color: #0f766e;
-                font-weight: 700;
-            }}
 
-            /* Quick Landmark Bar */
+            /* Landmark Bar */
             .landmark-bar {{
                 position: absolute;
-                top: 54px;
-                right: 14px;
+                top: 48px;
+                right: 12px;
                 z-index: 999;
                 display: {'none' if is_overview else 'flex'};
-                gap: 5px;
+                gap: 4px;
                 flex-wrap: wrap;
-                max-width: 480px;
+                max-width: 440px;
                 justify-content: flex-end;
             }}
             .landmark-chip {{
                 background: rgba(255, 255, 255, 0.88);
                 backdrop-filter: blur(6px);
                 border: 1px solid #e2e8f0;
-                border-radius: 6px;
-                padding: 3px 8px;
-                font-size: 10.5px;
+                border-radius: 5px;
+                padding: 2.5px 7px;
+                font-size: 10px;
                 font-weight: 600;
                 color: #334155;
                 cursor: pointer;
@@ -338,29 +313,28 @@ def render_leaflet_fused_map(
                 background: #0f766e;
                 color: #ffffff;
                 border-color: #0f766e;
-                transform: translateY(-1px);
             }}
 
             /* Map Legend Bottom Left */
             .map-legend-box {{
                 position: absolute;
-                bottom: 16px;
-                left: 14px;
+                bottom: 12px;
+                left: 12px;
                 z-index: 1000;
                 background: rgba(255, 255, 255, 0.95);
                 backdrop-filter: blur(10px);
                 border: 1px solid #cbd5e1;
                 border-radius: 8px;
-                padding: {'6px 10px' if is_overview else '8px 12px'};
-                box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-                font-size: 11px;
+                padding: {'6px 9px' if is_overview else '7px 11px'};
+                box-shadow: 0 4px 14px rgba(0,0,0,0.10);
+                font-size: 10.5px;
                 color: #1e293b;
-                max-width: 320px;
+                max-width: 300px;
             }}
             .legend-title {{
                 font-weight: 700;
-                font-size: 11px;
-                margin-bottom: 4px;
+                font-size: 10.5px;
+                margin-bottom: 3px;
                 color: #0f172a;
                 display: flex;
                 align-items: center;
@@ -368,10 +342,10 @@ def render_leaflet_fused_map(
             }}
             .legend-swatches {{
                 display: flex;
-                height: 10px;
+                height: 9px;
                 border-radius: 3px;
                 overflow: hidden;
-                margin-bottom: 3px;
+                margin-bottom: 2px;
                 border: 1px solid #cbd5e1;
             }}
             .legend-swatch {{
@@ -379,7 +353,7 @@ def render_leaflet_fused_map(
                 height: 100%;
             }}
             .legend-swatch-hatch {{
-                width: 24px;
+                width: 22px;
                 height: 100%;
                 background: repeating-linear-gradient(
                     45deg,
@@ -392,37 +366,15 @@ def render_leaflet_fused_map(
             .legend-scale-labels {{
                 display: flex;
                 justify-content: space-between;
-                font-size: 9px;
+                font-size: 8.5px;
                 color: #64748b;
                 font-weight: 600;
-                margin-bottom: 2px;
             }}
             .legend-subnote {{
-                font-size: 9px;
+                font-size: 8.5px;
                 color: #64748b;
+                margin-top: 2px;
                 display: {'none' if is_overview else 'block'};
-            }}
-
-            /* Telemetry & Zoom Label Bottom Right */
-            .map-bottom-telemetry {{
-                position: absolute;
-                bottom: 16px;
-                right: 14px;
-                z-index: 1000;
-                display: flex;
-                align-items: center;
-                gap: 6px;
-            }}
-            .telemetry-chip {{
-                background: rgba(255, 255, 255, 0.92);
-                backdrop-filter: blur(8px);
-                border: 1px solid #cbd5e1;
-                border-radius: 6px;
-                padding: 3px 8px;
-                font-size: 10.5px;
-                color: #334155;
-                font-weight: 600;
-                box-shadow: 0 2px 6px rgba(0,0,0,0.08);
             }}
 
             /* Custom Station Pin Badges */
@@ -434,35 +386,34 @@ def render_leaflet_fused_map(
                 cursor: pointer;
             }}
             .station-pin-badge {{
-                width: 32px;
-                height: 32px;
+                width: 30px;
+                height: 30px;
                 border-radius: 50%;
                 color: #ffffff;
                 font-weight: 800;
-                font-size: 11px;
+                font-size: 10.5px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 border: 2px solid #ffffff;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+                box-shadow: 0 3px 10px rgba(0,0,0,0.30);
                 transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
                 z-index: 2;
             }}
             .station-pin-container:hover .station-pin-badge {{
-                transform: scale(1.24);
-                box-shadow: 0 6px 16px rgba(0,0,0,0.45);
+                transform: scale(1.22);
             }}
             .station-pin-name {{
-                font-size: 9.5px;
+                font-size: 9px;
                 font-weight: 700;
                 color: #0f172a;
                 background: rgba(255, 255, 255, 0.97);
-                padding: 1px 5px;
+                padding: 1px 4.5px;
                 border-radius: 4px;
                 border: 1px solid #cbd5e1;
-                margin-top: 2px;
+                margin-top: 1.5px;
                 white-space: nowrap;
-                box-shadow: 0 2px 5px rgba(0,0,0,0.12);
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
                 z-index: 2;
             }}
             
@@ -471,10 +422,10 @@ def render_leaflet_fused_map(
                 position: absolute;
                 top: 0;
                 left: 0;
-                width: 32px;
-                height: 32px;
+                width: 30px;
+                height: 30px;
                 border-radius: 50%;
-                border: 2.5px solid #ef4444;
+                border: 2px solid #ef4444;
                 animation: ripple 2.2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
                 pointer-events: none;
                 z-index: 1;
@@ -484,7 +435,7 @@ def render_leaflet_fused_map(
             }}
             @keyframes ripple {{
                 0% {{ transform: scale(0.9); opacity: 0.95; }}
-                100% {{ transform: scale(2.8); opacity: 0; }}
+                100% {{ transform: scale(2.6); opacity: 0; }}
             }}
 
             /* Animated Wind Streamlines */
@@ -501,23 +452,23 @@ def render_leaflet_fused_map(
             /* Leaflet popup styling */
             .leaflet-popup-content-wrapper {{
                 background: #ffffff;
-                border-radius: 10px;
-                padding: 4px;
-                box-shadow: 0 14px 30px rgba(0,0,0,0.22);
+                border-radius: 8px;
+                padding: 3px;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.2);
                 border: 1px solid #e2e8f0;
             }}
             .custom-cell-popup {{
-                padding: 6px 8px;
+                padding: 5px 7px;
                 font-family: inherit;
             }}
             .popup-station-name {{
-                font-size: 13px;
+                font-size: 12.5px;
                 font-weight: 700;
                 color: #0f172a;
                 margin-bottom: 2px;
             }}
             .popup-pm-val {{
-                font-size: 19px;
+                font-size: 18px;
                 font-weight: 800;
                 color: #ef4444;
                 margin-bottom: 2px;
@@ -526,16 +477,16 @@ def render_leaflet_fused_map(
                 font-size: 11px;
                 font-weight: 600;
                 color: #64748b;
-                margin-bottom: 5px;
+                margin-bottom: 4px;
             }}
             .popup-meta {{
-                font-size: 10.5px;
+                font-size: 10px;
                 color: #475569;
                 border-top: 1px solid #f1f5f9;
-                padding-top: 4px;
+                padding-top: 3px;
                 display: flex;
                 flex-direction: column;
-                gap: 2px;
+                gap: 1.5px;
             }}
         </style>
     </head>
@@ -579,7 +530,6 @@ def render_leaflet_fused_map(
 
             <!-- Top Action Toolbar -->
             <div class="map-top-bar">
-                <!-- Basemap Switcher Menu -->
                 <div class="basemap-menu-wrap">
                     <button class="map-btn-pill" onclick="toggleBasemapMenu()" id="btn-basemap">
                         🗺️ Basemap ▾
@@ -593,18 +543,12 @@ def render_leaflet_fused_map(
                     </div>
                 </div>
 
-                <!-- Layer Switcher Direct on Map -->
-                <button class="map-btn-pill" onclick="toggleLayerSurface()" id="btn-layer-toggle" title="Switch Discrete 1km / Smooth Heat">
-                    { "🔥 Smooth Heat" if layer_mode == "smooth" else "🟦 1 km Grid" }
-                </button>
-
-                <!-- Fullscreen Toggle -->
-                <button class="map-btn-pill" onclick="toggleFullscreen()" title="Toggle Fullscreen">
-                    ⛶ Expand
+                <button class="map-btn-pill" onclick="flyToLoc(28.6139, 77.2090, 10, 'Delhi-NCR')">
+                    🔄 Reset View
                 </button>
             </div>
 
-            <!-- Landmark Quick Navigation -->
+            <!-- Landmark Navigation -->
             <div class="landmark-bar">
                 <button class="landmark-chip" onclick="flyToLoc(28.6468, 77.3160, 13, 'Anand Vihar')">📍 Anand Vihar</button>
                 <button class="landmark-chip" onclick="flyToLoc(28.7328, 77.1706, 13, 'Jahangirpuri')">📍 Jahangirpuri</button>
@@ -613,14 +557,13 @@ def render_leaflet_fused_map(
                 <button class="landmark-chip" onclick="flyToLoc(28.5300, 77.2700, 13, 'Okhla Hub')">📍 Okhla</button>
                 <button class="landmark-chip" onclick="flyToLoc(28.4595, 77.0266, 13, 'Gurugram')">📍 Gurugram</button>
                 <button class="landmark-chip" onclick="flyToLoc(28.5700, 77.3200, 13, 'Noida')">📍 Noida</button>
-                <button class="landmark-chip" onclick="flyToLoc(28.6139, 77.2090, 10, 'Delhi-NCR')">🔄 NCR Full</button>
             </div>
 
             <!-- Bottom Left Legend -->
             <div class="map-legend-box">
                 <div class="legend-title">
                     <span>PM<sub>2.5</sub> (µg/m³) · 1 km Surface</span>
-                    <span style="font-weight:600; color:#0f766e; font-size:10px;">CPCB Scale</span>
+                    <span style="font-weight:600; color:#0f766e; font-size:9.5px;">CPCB Scale</span>
                 </div>
                 <div class="legend-swatches">
                     <div class="legend-swatch" style="background:#10b981;" title="0-30 Good"></div>
@@ -636,16 +579,6 @@ def render_leaflet_fused_map(
                 </div>
                 <div class="legend-subnote">Hatched = Gap-filled (Cloud/Haze) · Live cursor telemetry active</div>
             </div>
-
-            <!-- Bottom Right Telemetry -->
-            <div class="map-bottom-telemetry">
-                <div class="telemetry-chip" id="wind-telemetry">
-                    💨 {wind_info.get("wind_speed", 5.4)} m/s · {wind_info.get("wind_direction", 290)}° WNW
-                </div>
-                <div class="telemetry-chip" id="zoom-label">
-                    Zoom 10
-                </div>
-            </div>
         </div>
 
         <script>
@@ -653,17 +586,16 @@ def render_leaflet_fused_map(
             var map = L.map('map', {{
                 center: center,
                 zoom: 10,
-                zoomControl: true,
+                zoomControl: false,
                 attributionControl: false
             }});
 
-            // Ensure crisp rendering across all screen resolutions and eliminate partial tile rendering
+            // Place zoom buttons at bottom-right so they never collide with the HUD
+            L.control.zoom({{ position: 'bottomright' }}).addTo(map);
+
+            // Invalidate size to ensure clean tile rendering
             setTimeout(function() {{ map.invalidateSize(); }}, 200);
             window.addEventListener('resize', function() {{ map.invalidateSize(); }});
-
-            map.on('zoomend', function() {{
-                document.getElementById('zoom-label').innerText = 'Zoom ' + map.getZoom();
-            }});
 
             // Retina & High-Res Basemaps
             var basemaps = {{
@@ -713,31 +645,27 @@ def render_leaflet_fused_map(
                     activeBasemapLayer = basemaps[key];
                     activeBasemapLayer.addTo(map);
                     currentBasemapKey = key;
-                    document.getElementById('basemap-dropdown').classList.remove('show');
+                    var menu = document.getElementById('basemap-dropdown');
+                    if (menu) menu.classList.remove('show');
                 }}
             }};
 
             window.toggleBasemapMenu = function() {{
                 var menu = document.getElementById('basemap-dropdown');
-                menu.classList.toggle('show');
+                if (menu) menu.classList.toggle('show');
             }};
 
             document.addEventListener('click', function(e) {{
                 var wrap = document.querySelector('.basemap-menu-wrap');
                 if (wrap && !wrap.contains(e.target)) {{
-                    document.getElementById('basemap-dropdown').classList.remove('show');
+                    var menu = document.getElementById('basemap-dropdown');
+                    if (menu) menu.classList.remove('show');
                 }}
             }});
 
-            window.toggleFullscreen = function() {{
-                var el = document.getElementById('map-wrapper');
-                el.classList.toggle('fullscreen');
-                setTimeout(function() {{ map.invalidateSize(); }}, 250);
-            }};
-
             window.toggleHud = function() {{
                 var hud = document.getElementById('map-hud');
-                hud.classList.toggle('collapsed');
+                if (hud) hud.classList.toggle('collapsed');
             }};
 
             var gridData = {grid_json};
@@ -760,40 +688,40 @@ def render_leaflet_fused_map(
             // Fly to landmark function
             window.flyToLoc = function(lat, lon, zoom, name) {{
                 map.flyTo([lat, lon], zoom, {{ duration: 1.2, easeLinearity: 0.25 }});
-                hudTitle.innerText = name;
-                hudCoords.innerText = lat.toFixed(3) + '°N, ' + lon.toFixed(3) + '°E';
+                if (hudTitle) hudTitle.innerText = name;
+                if (hudCoords) hudCoords.innerText = lat.toFixed(3) + '°N, ' + lon.toFixed(3) + '°E';
             }};
 
-            // 1. Smooth Heatmap Layer
-            var heatLayer = null;
-            var heatPoints = gridData.map(function(cell) {{
-                return [cell.center_lat, cell.center_lon, Math.min(1.0, cell.pm25 / 240.0)];
-            }});
-            heatLayer = L.heatLayer(heatPoints, {{
-                radius: 38,
-                blur: 26,
-                maxZoom: 14,
-                max: 1.0,
-                gradient: {{
-                    0.12: '#10b981',
-                    0.28: '#84cc16',
-                    0.45: '#eab308',
-                    0.65: '#f97316',
-                    0.85: '#ef4444',
-                    1.0: '#7f1d1d'
+            // 1. Smooth Heatmap Mode (Safely guarded)
+            if (layerMode === "smooth" && typeof L.heatLayer === 'function') {{
+                try {{
+                    var heatPoints = gridData.map(function(cell) {{
+                        return [cell.center_lat, cell.center_lon, Math.min(1.0, cell.pm25 / 240.0)];
+                    }});
+                    L.heatLayer(heatPoints, {{
+                        radius: 38,
+                        blur: 26,
+                        maxZoom: 14,
+                        max: 1.0,
+                        gradient: {{
+                            0.12: '#10b981',
+                            0.28: '#84cc16',
+                            0.45: '#eab308',
+                            0.65: '#f97316',
+                            0.85: '#ef4444',
+                            1.0: '#7f1d1d'
+                        }}
+                    }}).addTo(map);
+                }} catch (e) {{
+                    console.warn("Smooth heatmap error:", e);
                 }}
-            }});
-
-            if (layerMode === "smooth") {{
-                heatLayer.addTo(map);
             }}
 
             // 2. Discrete 1 km Surface Rectangles
-            var gridLayerGroup = L.layerGroup();
             gridData.forEach(function(cell) {{
                 var bounds = [[cell.lat_min, cell.lon_min], [cell.lat_max, cell.lon_max]];
                 var fillColor = cell.color;
-                var fillOpacity = (layerMode === "smooth") ? 0.04 : layerOpacity;
+                var fillOpacity = (layerMode === "smooth") ? 0.05 : layerOpacity;
                 var strokeColor = (layerMode === "smooth") ? "transparent" : "#ffffff";
                 var strokeWidth = (layerMode === "smooth") ? 0 : 0.35;
 
@@ -814,7 +742,7 @@ def render_leaflet_fused_map(
                     weight: strokeWidth,
                     fillColor: fillColor,
                     fillOpacity: fillOpacity
-                }});
+                }}).addTo(map);
 
                 // Gap-filled subtle hatch pattern overlay
                 if (cell.is_gap_filled && layerMode !== "smooth") {{
@@ -823,7 +751,7 @@ def render_leaflet_fused_map(
                         weight: 0,
                         fillColor: "#0f172a",
                         fillOpacity: 0.20
-                    }}).addTo(gridLayerGroup);
+                    }}).addTo(map);
                 }}
 
                 // Hover interaction: Live update HUD
@@ -831,12 +759,12 @@ def render_leaflet_fused_map(
                     rect.setStyle({{ color: '#38bdf8', weight: 2.2 }});
                     rect.bringToFront();
                     
-                    hudTitle.innerText = cell.nearest_station;
-                    hudCoords.innerText = cell.center_lat.toFixed(3) + '°N, ' + cell.center_lon.toFixed(3) + '°E';
-                    hudPm.innerHTML = `<span class="hud-val-tag" style="background:${{cell.bg_color}}; color:${{cell.text_color}};">${{cell.pm25}} µg/m³ (${{cell.category}})</span>`;
-                    hudAod.innerText = cell.aod + ' (MCD19A2)';
-                    hudSigma.innerText = '± ' + (cell.sigma || 14.2) + ' µg/m³';
-                    hudSource.innerText = cell.is_gap_filled ? 'Gap-Filled (RF Model)' : 'MODIS Satellite Fused';
+                    if (hudTitle) hudTitle.innerText = cell.nearest_station;
+                    if (hudCoords) hudCoords.innerText = cell.center_lat.toFixed(3) + '°N, ' + cell.center_lon.toFixed(3) + '°E';
+                    if (hudPm) hudPm.innerHTML = `<span class="hud-val-tag" style="background:${{cell.bg_color}}; color:${{cell.text_color}};">${{cell.pm25}} µg/m³ (${{cell.category}})</span>`;
+                    if (hudAod) hudAod.innerText = cell.aod + ' (MCD19A2)';
+                    if (hudSigma) hudSigma.innerText = '± ' + (cell.sigma || 14.2) + ' µg/m³';
+                    if (hudSource) hudSource.innerText = cell.is_gap_filled ? 'Gap-Filled (RF Model)' : 'MODIS Satellite Fused';
                 }});
 
                 rect.on('mouseout', function(e) {{
@@ -857,45 +785,19 @@ def render_leaflet_fused_map(
                     </div>
                 `;
                 rect.bindPopup(popupHtml);
-                rect.addTo(gridLayerGroup);
             }});
-
-            gridLayerGroup.addTo(map);
-
-            // Toggle surface mode between Discrete and Smooth
-            window.toggleLayerSurface = function() {{
-                var btn = document.getElementById('btn-layer-toggle');
-                if (map.hasLayer(heatLayer)) {{
-                    map.removeLayer(heatLayer);
-                    gridData.forEach(function(c) {{ /* restored */ }});
-                    gridLayerGroup.eachLayer(function(l) {{
-                        if (l.setStyle) {{
-                            l.setStyle({{ fillOpacity: layerOpacity, weight: 0.35, color: '#ffffff' }});
-                        }}
-                    }});
-                    btn.innerHTML = '🟦 1 km Grid';
-                }} else {{
-                    gridLayerGroup.eachLayer(function(l) {{
-                        if (l.setStyle) {{
-                            l.setStyle({{ fillOpacity: 0.04, weight: 0, color: 'transparent' }});
-                        }}
-                    }});
-                    heatLayer.addTo(map);
-                    btn.innerHTML = '🔥 Smooth Heat';
-                }}
-            }};
 
             // 3. Live Animated Wind Flow Streamlines
             if (layerMode === "wind" || { "true" if show_wind else "false" }) {{
                 var windDir = windInfo.wind_direction || 290;
                 var windSpd = windInfo.wind_speed || 5.4;
                 var rad = (windDir * Math.PI) / 180.0;
-                var dx = Math.round(-Math.sin(rad) * 28);
-                var dy = Math.round(Math.cos(rad) * 28);
+                var dx = Math.round(-Math.sin(rad) * 26);
+                var dy = Math.round(Math.cos(rad) * 26);
 
                 var arrowSvg = `
-                    <svg width="26" height="26" viewBox="0 0 26 26" fill="none" class="wind-streamline" style="--dx:${{dx}}px; --dy:${{dy}}px; transform: rotate(${{windDir + 90}}deg);">
-                        <path d="M13 2L20 22L13 18L6 22L13 2Z" fill="#38bdf8" stroke="#ffffff" stroke-width="1.2" opacity="0.85"/>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="wind-streamline" style="--dx:${{dx}}px; --dy:${{dy}}px; transform: rotate(${{windDir + 90}}deg);">
+                        <path d="M12 2L19 21L12 17L5 21L12 2Z" fill="#38bdf8" stroke="#ffffff" stroke-width="1.2" opacity="0.85"/>
                     </svg>
                 `;
                 
@@ -909,8 +811,8 @@ def render_leaflet_fused_map(
                         var windIcon = L.divIcon({{
                             html: arrowSvg,
                             className: 'wind-arrow-wrap',
-                            iconSize: [26, 26],
-                            iconAnchor: [13, 13]
+                            iconSize: [24, 24],
+                            iconAnchor: [12, 12]
                         }});
                         
                         L.marker([wLat, wLon], {{ icon: windIcon, interactive: false }}).addTo(map);
@@ -938,20 +840,20 @@ def render_leaflet_fused_map(
                     var pinIcon = L.divIcon({{
                         html: badgeHtml,
                         className: 'station-badge-icon',
-                        iconSize: [36, 44],
-                        iconAnchor: [18, 22]
+                        iconSize: [34, 42],
+                        iconAnchor: [17, 21]
                     }});
 
                     var marker = L.marker([st.lat, st.lon], {{ icon: pinIcon, zIndexOffset: isWorst ? 1000 : 500 }}).addTo(map);
 
                     marker.on('click', function() {{
                         map.flyTo([st.lat, st.lon], 13, {{ duration: 1.2 }});
-                        hudTitle.innerText = st.name + ' (Ground Station)';
-                        hudCoords.innerText = st.lat.toFixed(3) + '°N, ' + st.lon.toFixed(3) + '°E';
-                        hudPm.innerHTML = `<span class="hud-val-tag" style="background:#fee2e2; color:#991b1b;">${{st.pm25}} µg/m³ (${{st.status}})</span>`;
-                        hudAod.innerText = (st.aod || 0.48) + ' (Collocated)';
-                        hudSigma.innerText = 'MAE ' + (st.loso_mae || 24.5) + ' µg/m³';
-                        hudSource.innerText = st.source || 'CPCB Telemetry';
+                        if (hudTitle) hudTitle.innerText = st.name + ' (Ground Station)';
+                        if (hudCoords) hudCoords.innerText = st.lat.toFixed(3) + '°N, ' + st.lon.toFixed(3) + '°E';
+                        if (hudPm) hudPm.innerHTML = `<span class="hud-val-tag" style="background:#fee2e2; color:#991b1b;">${{st.pm25}} µg/m³ (${{st.status}})</span>`;
+                        if (hudAod) hudAod.innerText = (st.aod || 0.48) + ' (Collocated)';
+                        if (hudSigma) hudSigma.innerText = 'MAE ' + (st.loso_mae || 24.5) + ' µg/m³';
+                        if (hudSource) hudSource.innerText = st.source || 'CPCB Telemetry';
                     }});
 
                     var tooltipContent = `
@@ -963,16 +865,6 @@ def render_leaflet_fused_map(
                     `;
                     marker.bindTooltip(tooltipContent, {{ direction: 'top', offset: [0, -16] }});
                 }});
-            }}
-
-            // Auto-focus selected station if provided
-            if (selectedStation) {{
-                var targetSt = stationsData.find(function(s) {{ return s.name.toLowerCase() === selectedStation.toLowerCase(); }});
-                if (targetSt) {{
-                    setTimeout(function() {{
-                        flyToLoc(targetSt.lat, targetSt.lon, 12, targetSt.name);
-                    }}, 400);
-                }}
             }}
         </script>
     </body>
@@ -989,7 +881,7 @@ def render_combined_hotspot_map(
     """
     Renders Enhanced Hotspot Map for Combined Insights.
     Overlays sector-coded glowing emission hotspots with thermal footprint rings,
-    interactive facility telemetry HUD, fullscreen expander, and quick fly-to controls.
+    interactive facility telemetry HUD, and quick fly-to controls.
     """
     grid_json = _safe_json_dumps(grid_cells)
     
@@ -1020,15 +912,6 @@ def render_combined_hotspot_map(
                 overflow: hidden;
                 border: 1px solid #cbd5e1;
                 box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15);
-            }}
-            #hotspot-wrapper.fullscreen {{
-                position: fixed !important;
-                top: 0 !important;
-                left: 0 !important;
-                width: 100vw !important;
-                height: 100vh !important;
-                z-index: 999999 !important;
-                border-radius: 0 !important;
             }}
             #hotspot-map {{ width: 100%; height: 100%; background: #0f172a; }}
             
@@ -1063,8 +946,8 @@ def render_combined_hotspot_map(
             /* Quick Nav Bar */
             .hotspot-top-bar {{
                 position: absolute;
-                top: 14px;
-                right: 14px;
+                top: 12px;
+                right: 12px;
                 z-index: 1000;
                 display: flex;
                 gap: 5px;
@@ -1074,8 +957,8 @@ def render_combined_hotspot_map(
                 backdrop-filter: blur(8px);
                 border: 1px solid #cbd5e1;
                 border-radius: 6px;
-                padding: 4px 9px;
-                font-size: 11px;
+                padding: 4px 8px;
+                font-size: 10.5px;
                 font-weight: 600;
                 color: #334155;
                 cursor: pointer;
@@ -1090,15 +973,15 @@ def render_combined_hotspot_map(
             /* Floating Legend */
             .hotspot-legend {{
                 position: absolute;
-                bottom: 16px;
-                left: 14px;
+                bottom: 12px;
+                left: 12px;
                 z-index: 1000;
                 background: rgba(255, 255, 255, 0.96);
                 backdrop-filter: blur(8px);
                 border: 1px solid #cbd5e1;
                 border-radius: 8px;
-                padding: 8px 12px;
-                font-size: 11px;
+                padding: 7px 11px;
+                font-size: 10.5px;
                 color: #334155;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.12);
                 max-width: 320px;
@@ -1107,14 +990,14 @@ def render_combined_hotspot_map(
                 display: inline-flex;
                 align-items: center;
                 gap: 5px;
-                margin-right: 10px;
-                margin-top: 3px;
-                font-size: 10.5px;
+                margin-right: 8px;
+                margin-top: 2px;
+                font-size: 10px;
                 font-weight: 600;
             }}
             .legend-badge {{
-                width: 10px;
-                height: 10px;
+                width: 9px;
+                height: 9px;
                 transform: rotate(45deg);
                 border-radius: 2px;
             }}
@@ -1129,11 +1012,10 @@ def render_combined_hotspot_map(
                 <button class="hotspot-chip" onclick="map.flyTo([28.5833, 77.5500], 13)">📍 Dadri NTPC</button>
                 <button class="hotspot-chip" onclick="map.flyTo([28.7900, 77.0400], 13)">📍 Bawana Ind</button>
                 <button class="hotspot-chip" onclick="map.flyTo([28.6139, 77.2090], 10)">🔄 NCR Full</button>
-                <button class="hotspot-chip" onclick="toggleHotspotFullscreen()">⛶ Expand</button>
             </div>
 
             <div class="hotspot-legend">
-                <div style="font-weight:700; color:#0f172a; margin-bottom:4px;">Climate TRACE Point Sources · kt CO₂e</div>
+                <div style="font-weight:700; color:#0f172a; margin-bottom:3px;">Climate TRACE Point Sources · kt CO₂e</div>
                 <div>
                     <span class="legend-item"><span class="legend-badge" style="background:#f59e0b;"></span>Power</span>
                     <span class="legend-item"><span class="legend-badge" style="background:#8b5cf6;"></span>Industry</span>
@@ -1153,12 +1035,6 @@ def render_combined_hotspot_map(
 
             setTimeout(function() {{ map.invalidateSize(); }}, 200);
             window.addEventListener('resize', function() {{ map.invalidateSize(); }});
-
-            window.toggleHotspotFullscreen = function() {{
-                var el = document.getElementById('hotspot-wrapper');
-                el.classList.toggle('fullscreen');
-                setTimeout(function() {{ map.invalidateSize(); }}, 250);
-            }};
             
             L.tileLayer('https://{{s}}.basemaps.cartocdn.com/light_all/{{z}}/{{x}}/{{y}}{{r}}.png', {{
                 maxZoom: 20,
