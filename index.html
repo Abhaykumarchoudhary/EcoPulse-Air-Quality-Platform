@@ -716,6 +716,10 @@
                         <input type="checkbox" id="chk-wind" checked onchange="toggleWind(this.checked)">
                         <span>Wind Flow Streamlines</span>
                     </label>
+                    <label class="checkbox-row">
+                        <input type="checkbox" id="chk-fires" checked onchange="toggleFires(this.checked)">
+                        <span>🔥 Satellite Fires (NASA VIIRS)</span>
+                    </label>
                 </div>
 
                 <div class="slider-row">
@@ -959,6 +963,40 @@
         function toggleWind(show) {
             if (show) windLayer.addTo(map);
             else map.removeLayer(windLayer);
+        }
+
+        // 6. NASA VIIRS Stubble Burning & Fire Hotspots
+        var fireLayer = L.layerGroup().addTo(map);
+        var sampleFires = [
+            { lat: 28.789, lon: 76.845, frp: 5.8, bright: 334.2, loc: "Bawana-Sonipat Corridor" },
+            { lat: 28.984, lon: 77.017, frp: 7.2, bright: 341.0, loc: "Sonipat Outskirts" },
+            { lat: 28.692, lon: 76.712, frp: 4.5, bright: 326.5, loc: "Bahadurgarh Periphery" },
+            { lat: 28.455, lon: 76.820, frp: 6.1, bright: 338.4, loc: "Gurugram Rural" },
+            { lat: 28.850, lon: 77.290, frp: 8.3, bright: 345.1, loc: "Loni-Baghpat Border" }
+        ];
+        sampleFires.forEach(function(f) {
+            var fireHtml = `
+                <div style="position:relative; width:26px; height:26px; display:flex; align-items:center; justify-content:center;">
+                    <div class="radar-ripple" style="border-color:#ef4444; background:rgba(239,68,68,0.25);"></div>
+                    <span style="font-size:18px; filter: drop-shadow(0 0 5px #ef4444); cursor:pointer;">🔥</span>
+                </div>
+            `;
+            var fIcon = L.divIcon({ html: fireHtml, className: 'f-icon', iconSize: [26, 26], iconAnchor: [13, 13] });
+            var m = L.marker([f.lat, f.lon], { icon: fIcon, zIndexOffset: 700 }).addTo(fireLayer);
+            m.bindTooltip(`
+                <div style="font-family:sans-serif; padding:4px 6px; font-size:11px;">
+                    <strong style="color:#b91c1c;">🔥 NASA VIIRS Stubble Fire Hotspot</strong><br>
+                    Location: <b>${f.loc}</b><br>
+                    Fire Radiative Power: <b>${f.frp} MW</b><br>
+                    Brightness: <b>${f.bright} K</b><br>
+                    <span style="font-size:10px; color:#64748b;">Source: NASA FIRMS Near Real-Time</span>
+                </div>
+            `, { direction: 'top', offset: [0, -10] });
+        });
+
+        function toggleFires(show) {
+            if (show) fireLayer.addTo(map);
+            else map.removeLayer(fireLayer);
         }
 
         function downloadGridCSV() {

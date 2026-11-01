@@ -168,7 +168,7 @@ def render_overview_page():
     # Footer Row below pipeline container
     st.markdown(
         '<div style="display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: #64748b; margin-top: 14px; margin-bottom: 12px; padding: 0 4px;">'
-        '<span>Sources: MODIS MAIAC, CPCB, OpenAQ, Open-Meteo, Climate TRACE · Estimates, not official AQI</span>'
+        '<span>Sources: NASA VIIRS (FIRMS), MODIS MAIAC, CPCB (WAQI/OGD), Open-Meteo, Climate TRACE, TomTom Traffic · Estimates, not official AQI</span>'
         '<a href="https://github.com/Abhaykumarchoudhary/EcoPulse-Air-Quality-Platform" target="_blank" style="color: #0f766e; text-decoration: none; font-weight: 600;">GitHub Repository ★</a>'
         '</div>',
         unsafe_allow_html=True

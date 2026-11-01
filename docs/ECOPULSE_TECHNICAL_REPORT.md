@@ -204,3 +204,4 @@ The platform utilizes a modern, resilient decoupled software architecture:
 ## 7. Conclusions & Academic Contributions
 
 The **EcoPulse** platform successfully demonstrates that fusing satellite remote sensing with ground telemetry and convective meteorological physics overcomes the traditional spatial limitations of ground-only monitoring. The system provides an open-source, reproducible, and mathematically rigorous decision-support platform for urban air quality management in one of the world's most vulnerable airsheds.
+

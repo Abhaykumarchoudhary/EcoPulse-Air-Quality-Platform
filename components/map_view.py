@@ -32,7 +32,9 @@ def render_leaflet_fused_map(
     is_overview: bool = False,
     stations: Optional[List[Dict[str, Any]]] = None,
     wind_data: Optional[Dict[str, Any]] = None,
-    show_wind: bool = False
+    show_wind: bool = False,
+    fire_hotspots: Optional[List[Dict[str, Any]]] = None,
+    show_fires: bool = True
 ):
     """
     Renders ultra-high quality Leaflet map with Retina basemaps, discrete 1km / smooth heat modes,
@@ -46,6 +48,8 @@ def render_leaflet_fused_map(
     wind_info = wind_data or {"wind_speed": 5.4, "wind_direction": 290}
     wind_json = _safe_json_dumps(wind_info)
     bounds_json = _safe_json_dumps(NCR_BOUNDS)
+    fires_json = _safe_json_dumps(fire_hotspots or [])
+    show_fires_js = "true" if show_fires else "false"
     
     # Normalize basemap theme key
     theme_key = (basemap_theme or "positron").lower()
@@ -937,6 +941,49 @@ def render_leaflet_fused_map(
                         </div>
                     `;
                     marker.bindTooltip(tooltipContent, {{ direction: 'top', offset: [0, -16] }});
+                }});
+            }}
+
+            // 5. NASA FIRMS VIIRS Active Fire Hotspots (Stubble Burning / Biomass)
+            var showFires = {show_fires_js};
+            var firesData = {fires_json};
+
+            if (showFires && firesData && firesData.length > 0) {{
+                firesData.forEach(function(f) {{
+                    var fireHtml = `
+                        <div style="position:relative; width:28px; height:28px; display:flex; align-items:center; justify-content:center;">
+                            <div class="radar-ripple" style="border-color:#ef4444; background:rgba(239, 68, 68, 0.25);"></div>
+                            <span style="font-size:18px; filter: drop-shadow(0 0 5px #ef4444); cursor:pointer;">🔥</span>
+                        </div>
+                    `;
+                    var fireIcon = L.divIcon({{
+                        html: fireHtml,
+                        className: 'fire-badge-icon',
+                        iconSize: [28, 28],
+                        iconAnchor: [14, 14]
+                    }});
+                    var fMarker = L.marker([f.lat, f.lon], {{ icon: fireIcon, zIndexOffset: 750 }}).addTo(map);
+
+                    fMarker.on('click', function() {{
+                        map.flyTo([f.lat, f.lon], 12, {{ duration: 1.2 }});
+                        if (hudTitle) hudTitle.innerText = 'Active Fire Hotspot (NASA VIIRS)';
+                        if (hudCoords) hudCoords.innerText = f.lat.toFixed(3) + '°N, ' + f.lon.toFixed(3) + '°E';
+                        if (hudPm) hudPm.innerHTML = `<span class="hud-val-tag" style="background:#fef2f2; color:#b91c1c; border-color:#fca5a5;">FRP: ${{f.frp}} MW</span>`;
+                        if (hudAod) hudAod.innerText = 'Brightness: ' + f.brightness + ' K';
+                        if (hudSigma) hudSigma.innerText = 'Satellite: ' + (f.satellite || 'VIIRS');
+                        if (hudSource) hudSource.innerText = (f.source || 'NASA FIRMS') + ' (' + (f.time || '') + ')';
+                    }});
+
+                    var fTooltip = `
+                        <div style="font-family:sans-serif; padding:4px 6px; font-size:11px;">
+                            <strong style="color:#b91c1c;">🔥 NASA VIIRS Active Fire Hotspot</strong><br>
+                            Fire Radiative Power: <b>${{f.frp}} MW</b><br>
+                            Brightness Temp: <b>${{f.brightness}} K</b><br>
+                            Acquisition: <b>${{f.date}} ${{f.time}}</b><br>
+                            <span style="font-size:10px; color:#64748b;">Source: ${{f.source || 'NASA FIRMS NRT'}}</span>
+                        </div>
+                    `;
+                    fMarker.bindTooltip(fTooltip, {{ direction: 'top', offset: [0, -12] }});
                 }});
             }}
         </script>

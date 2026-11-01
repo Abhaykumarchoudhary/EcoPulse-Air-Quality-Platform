@@ -11,12 +11,16 @@ from data.live_api import (
     fetch_live_delhi_air_quality,
     fetch_live_delhi_weather,
     fetch_live_station_readings,
+    fetch_live_satellite_fires,
+    fetch_delhi_traffic_congestion,
     generate_live_grid
 )
 from config import AVAILABLE_DATES
 
 def render_fused_map_view():
     is_live = (st.session_state.get("data_mode", "Live") == "Live")
+    fires = fetch_live_satellite_fires()
+    traffic = fetch_delhi_traffic_congestion()
     
     if is_live:
         aq = fetch_live_delhi_air_quality()
@@ -73,6 +77,8 @@ def render_fused_map_view():
         st.session_state["show_anomalies"] = True
     if "show_wind" not in st.session_state:
         st.session_state["show_wind"] = True
+    if "show_fires" not in st.session_state:
+        st.session_state["show_fires"] = True
     if "timeline_date_idx" not in st.session_state:
         st.session_state["timeline_date_idx"] = len(AVAILABLE_DATES) - 1
     if "timeline_playing" not in st.session_state:
@@ -108,9 +114,11 @@ def render_fused_map_view():
         c_st = st.checkbox("Numeric Station Pins", value=st.session_state["show_stations"], key="chk_stations")
         c_an = st.checkbox("Anomaly Hotspot Flags", value=st.session_state["show_anomalies"], key="chk_anomalies")
         c_wind = st.checkbox("Wind Flow Streamlines", value=st.session_state["show_wind"], key="chk_wind")
+        c_fires = st.checkbox(f"🔥 Active Satellite Fires ({len(fires)})", value=st.session_state["show_fires"], key="chk_fires")
         st.session_state["show_stations"] = c_st
         st.session_state["show_anomalies"] = c_an
         st.session_state["show_wind"] = c_wind
+        st.session_state["show_fires"] = c_fires
         
         # Opacity Slider
         st.markdown("<div style='font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; margin-top:12px;'>SURFACE OPACITY</div>", unsafe_allow_html=True)
@@ -167,6 +175,30 @@ def render_fused_map_view():
                     st.session_state["selected_station"] = st_item["name"]
                     st.rerun()
 
+        # Traffic & Arterial Congestion Telemetry Card
+        st.markdown(f"""
+        <div class="content-box-card" style="padding: 14px; margin-top: 14px; margin-bottom: 8px; border-left: 3px solid #3b82f6;">
+            <div style="font-size: 13px; font-weight: 700; color: #0f172a; display:flex; justify-content:space-between; align-items:center;">
+                <span>🚗 Traffic Congestion</span>
+                <span style="font-size:10px; font-weight:600; color:{'#10b981' if traffic.get('is_live_tomtom') else '#64748b'};">
+                    {'● TomTom Live' if traffic.get('is_live_tomtom') else '● Delhi Corridor Model'}
+                </span>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:11px; color:#475569;">
+                <span>Avg Congestion Delay:</span>
+                <b style="color:{'#dc2626' if traffic['avg_delay_pct'] > 40 else '#d97706'};">+{traffic['avg_delay_pct']}%</b>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:4px; font-size:11px; color:#475569;">
+                <span>Corridor Speed:</span>
+                <b>{traffic['avg_speed_kmh']} km/h</b>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:4px; font-size:11px; color:#475569;">
+                <span>Idling Emission Impact:</span>
+                <b style="color:#b91c1c;">{traffic['emission_multiplier']}x factor</b>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
         # Data Export Card in Sidebar
         cur_date_str = AVAILABLE_DATES[st.session_state["timeline_date_idx"]]
         cur_date_slug = cur_date_str.lower().replace(" ", "_").replace("(", "").replace(")", "")
@@ -219,7 +251,9 @@ def render_fused_map_view():
             is_overview=False,
             stations=stations,
             wind_data=weather,
-            show_wind=st.session_state["show_wind"]
+            show_wind=st.session_state["show_wind"],
+            fire_hotspots=fires,
+            show_fires=st.session_state["show_fires"]
         )
 
     # Bottom Bar: Timeline Player (Wireframe 2a Bottom)

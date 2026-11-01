@@ -93,20 +93,28 @@ def render_sidebar():
             with c_ref2:
                 st.markdown("<div style='font-size:11px; color:#10b981; padding-top:6px; font-weight:600;'>● Online</div>", unsafe_allow_html=True)
 
-            with st.expander("⚙️ API Keys & Upload Data", expanded=False):
+            with st.expander("⚙️ API Keys & Live Feeds", expanded=False):
                 load_env_credentials()
                 has_waqi = bool(st.session_state.get("waqi_token") or os.environ.get("WAQI_API_TOKEN"))
+                has_firms = bool(st.session_state.get("firms_key") or os.environ.get("NASA_FIRMS_MAP_KEY"))
                 has_openaq = bool(st.session_state.get("openaq_key") or os.environ.get("OPENAQ_API_KEY"))
+                has_tomtom = bool(st.session_state.get("tomtom_key") or os.environ.get("TOMTOM_API_KEY"))
+                has_ogd = bool(os.environ.get("DATA_GOV_IN_API_KEY"))
 
-                waqi_badge = '<span style="color:#34d399;">✓ Connected (.env)</span>' if has_waqi else '<span style="color:#94a3b8;">Not set</span>'
+                waqi_badge = '<span style="color:#34d399;">✓ Live Active (23 CPCB Stations)</span>' if has_waqi else '<span style="color:#94a3b8;">Not set</span>'
+                firms_badge = '<span style="color:#34d399;">✓ Live Active (VIIRS Satellites)</span>' if has_firms else '<span style="color:#94a3b8;">Reference Mode</span>'
                 openaq_badge = '<span style="color:#34d399;">✓ Connected (.env)</span>' if has_openaq else '<span style="color:#94a3b8;">Optional</span>'
+                tomtom_badge = '<span style="color:#34d399;">✓ Connected (.env)</span>' if has_tomtom else '<span style="color:#94a3b8;">Corridor Model</span>'
+                ogd_badge = '<span style="color:#34d399;">✓ Connected (.env)</span>' if has_ogd else '<span style="color:#94a3b8;">Fallback</span>'
 
                 st.markdown(f"""
                 <div style="font-size:11px; color:#cbd5e1; line-height:1.6; margin-bottom: 8px;">
-                    <strong>Open-Meteo AQ:</strong> <span style="color:#34d399;">✓ Connected (Free)</span><br>
-                    <strong>Open-Meteo Weather:</strong> <span style="color:#34d399;">✓ Connected (Free)</span><br>
-                    <strong>WAQI CPCB Live:</strong> {waqi_badge}<br>
-                    <strong>OpenAQ v3 API:</strong> {openaq_badge}
+                    <strong>Open-Meteo Weather:</strong> <span style="color:#34d399;">✓ Live (Free)</span><br>
+                    <strong>WAQI CPCB Ground:</strong> {waqi_badge}<br>
+                    <strong>NASA FIRMS Fires:</strong> {firms_badge}<br>
+                    <strong>OpenAQ v3 Feed:</strong> {openaq_badge}<br>
+                    <strong>TomTom Traffic:</strong> {tomtom_badge}<br>
+                    <strong>data.gov.in CPCB:</strong> {ogd_badge}
                 </div>
                 """, unsafe_allow_html=True)
                 
@@ -124,7 +132,35 @@ def render_sidebar():
                     st.cache_data.clear()
                     st.rerun()
 
-                # 2. OpenAQ v3 Key
+                # 2. NASA FIRMS Map Key
+                curr_firms = st.session_state.get("firms_key") or os.environ.get("NASA_FIRMS_MAP_KEY", "")
+                firms_input = st.text_input(
+                    "NASA FIRMS Map Key",
+                    value=curr_firms,
+                    type="password",
+                    key="input_firms_key",
+                    help="Active fire detection key from https://firms.modaps.eosdis.nasa.gov/api/map_key/"
+                )
+                if firms_input != st.session_state.get("firms_key", ""):
+                    st.session_state["firms_key"] = firms_input
+                    st.cache_data.clear()
+                    st.rerun()
+
+                # 3. TomTom Key
+                curr_tomtom = st.session_state.get("tomtom_key") or os.environ.get("TOMTOM_API_KEY", "")
+                tomtom_input = st.text_input(
+                    "TomTom API Key",
+                    value=curr_tomtom,
+                    type="password",
+                    key="input_tomtom_key",
+                    help="Traffic key from https://developer.tomtom.com/"
+                )
+                if tomtom_input != st.session_state.get("tomtom_key", ""):
+                    st.session_state["tomtom_key"] = tomtom_input
+                    st.cache_data.clear()
+                    st.rerun()
+
+                # 4. OpenAQ v3 Key
                 curr_openaq = st.session_state.get("openaq_key") or os.environ.get("OPENAQ_API_KEY", "")
                 openaq_input = st.text_input(
                     "OpenAQ Key (Optional)",
